@@ -11,4 +11,4 @@ def home() -> dict:
 if __name__ == "__main__":
     # To make the work more comfortable, you can run a script. 
     # It is better to do this in a separate file like run.py.
-    uvicorn.run("main:app", reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
