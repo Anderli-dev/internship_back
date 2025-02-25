@@ -40,6 +40,17 @@ The application doc will be available at:
 - OpenAPI documentation: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 - ReDoc documentation: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
+### Using Docker
+
+Build the Docker image:
+```bash
+docker build -t meduzzen-back-app .
+```
+Run the container:
+```bash
+docker run -d --name meduzzen-back-app -p 8000:8000 meduzzen-back-app
+```
+
 ## Running Tests
 
 Run the test suite using `pytest`:
