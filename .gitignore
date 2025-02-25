@@ -1,0 +1,62 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env
+!.env.*
+*.swp
+
+# FastAPI-specific
+*.log
+instance/
+logs/
+*.sqlite3
+
+# Python-related
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# pytest cache
+.pytest_cache/
+
+# AWS-related
+.aws/
+*.pem
+terraform.tfstate
+terraform.tfstate.backup
+
+# Celery
+celerybeat-schedule
+*.celery.pid
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+.docker/
+docker-entrypoint.sh
+
+# Redis
+dump.rdb
+*.rdb
+*.aof
+
+# PostgreSQL
+*.sql
+pgdata/
+postgresql/
+
+# IDE-specific
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
