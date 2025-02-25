@@ -3,11 +3,12 @@ from main import app
 client = TestClient(app)
 
 
+# Test response
 def test_home_status_code():
     response = client.get("/")
     assert response.status_code == 200
 
-
+# Test is json
 def test_home_response_structure():
     response = client.get("/")
     json_data = response.json()
@@ -15,7 +16,7 @@ def test_home_response_structure():
     assert "detail" in json_data
     assert "result" in json_data
 
-
+# Test response data
 def test_home_response_values():
     response = client.get("/")
     json_data = response.json()
