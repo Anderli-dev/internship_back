@@ -38,7 +38,6 @@ celerybeat-schedule
 
 # Docker
 docker-compose.override.yml
-.dockerignore
 .docker/
 docker-entrypoint.sh
 
