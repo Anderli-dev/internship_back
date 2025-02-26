@@ -59,3 +59,9 @@ postgresql/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Alembic
+app/db/migrations/versions/*.pyc
+app/db/migrations/versions/__pycache__/
+app/db/migrations/__pycache__/
+app/db/migrations/.cache
