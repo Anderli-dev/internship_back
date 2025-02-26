@@ -1,11 +1,15 @@
 import core.settings as settings
 import uvicorn
-from fastapi import Depends, FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession
-from utils.cors import add_cors_middleware
 
 from db.redis import get_redis_connection
 from db.session import get_db
+
+from fastapi import Depends, FastAPI
+
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from utils.cors import add_cors_middleware
 
 app = FastAPI()
 
@@ -25,7 +29,7 @@ async def redis_test() -> dict:
 @app.get("/db_test")
 async def test_db_connection(db: AsyncSession = Depends(get_db)) -> dict:
     try:
-        result = await db.execute("SELECT 1")
+        result = await db.execute(text("SELECT 1"))
         return {"db_status": "Connected", "result": result.scalar()}
     except Exception as e:
         return {"db_status": "Error", "details": str(e)}

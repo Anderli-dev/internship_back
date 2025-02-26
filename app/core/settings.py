@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-HOST: str = "localhost"
+HOST: str = "0.0.0.0"
 PORT: int = 8000
 
 DATABASE_URL: str = os.getenv("DATABASE_URL")
