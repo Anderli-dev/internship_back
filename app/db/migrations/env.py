@@ -1,6 +1,7 @@
 import asyncio
 import os
 from logging.config import fileConfig
+from core.settings import logger
 
 from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -34,6 +35,7 @@ target_metadata = BaseModel.metadata
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (without connecting to the database)."""
+    logger.info(f"Runing offline migrations.")
     context.configure(
         url=DATABASE_URL,
         target_metadata=target_metadata,
@@ -47,6 +49,7 @@ def run_migrations_offline() -> None:
 
 async def run_migrations_online() -> None:
     """Run migrations in 'online' mode (with a database connection)."""
+    logger.info(f"Runing online migrations.")
     engine = create_async_engine(DATABASE_URL, pool_pre_ping=True)
 
     async with engine.connect() as connection:

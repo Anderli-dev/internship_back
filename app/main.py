@@ -1,4 +1,5 @@
 import core.settings as settings
+from core.settings import logger
 import uvicorn
 
 from db.redis import get_redis_connection
@@ -21,17 +22,24 @@ async def home() -> dict:
 
 @app.get("/redis_test")
 async def redis_test() -> dict:
-    redis = await get_redis_connection()
-    await redis.set("test_key", "Hello, Redis!")
-    value = await redis.get("test_key")
-    return {"redis_value": value}
+    logger.info("Redis test.")
+    try:
+        redis = await get_redis_connection()
+        await redis.set("test_key", "Hello, Redis!")
+        value = await redis.get("test_key")
+        return {"redis_value": value}
+    except Exception as e:
+        logger.info("PostgreSQL conection error:")
+        return {"db_status": "Error", "details": str(e)}
 
 @app.get("/db_test")
 async def test_db_connection(db: AsyncSession = Depends(get_db)) -> dict:
+    logger.info("PostgreSQL test.")
     try:
         result = await db.execute(text("SELECT 1"))
         return {"db_status": "Connected", "result": result.scalar()}
     except Exception as e:
+        logger.error(f"PostgreSQL conection error:{str(e)}")
         return {"db_status": "Error", "details": str(e)}
     
 if __name__ == "__main__":
