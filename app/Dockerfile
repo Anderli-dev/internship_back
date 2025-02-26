@@ -11,5 +11,7 @@ COPY . .
 
 EXPOSE 8000
 
+WORKDIR /app
+
 ENTRYPOINT ["python3"]
 CMD ["main.py"]
