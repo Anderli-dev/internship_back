@@ -1,21 +1,12 @@
 import uvicorn
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import settings
+
+from app.utils.cors import add_cors_middleware
 
 app = FastAPI()
 
-
-origins = [
-    "http://localhost:3000",  # For React frontend
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True, 
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+add_cors_middleware(app)
 
 @app.get("/")
 def home() -> dict:
@@ -24,4 +15,4 @@ def home() -> dict:
 if __name__ == "__main__":
     # To make the work more comfortable, you can run a script. 
     # It is better to do this in a separate file like run.py.
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=True)
