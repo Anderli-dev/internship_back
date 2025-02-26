@@ -7,6 +7,7 @@ This is a FastAPI-based application.
 Make sure you have the following installed:
 - Python 3.9+
 - pip
+- Docker
 
 ## Installation
 
@@ -29,27 +30,16 @@ Make sure you have the following installed:
 
 ## Running the Application
 
-### Using Uvicorn
+### Using Docker Compose
 
-Start the application locally with Uvicorn:
+1. Ensure you have Docker and Docker Compose installed.
+2. Start the application using Docker Compose:
 ```bash
-uvicorn app.main:app --reload
+docker-compose up --build
 ```
-
-The application doc will be available at:
-- OpenAPI documentation: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- ReDoc documentation: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
-
-### Using Docker
-
-Build the Docker image:
-```bash
-docker build -t meduzzen-back-app .
-```
-Run the container:
-```bash
-docker run -d --name meduzzen-back-app -p 8000:8000 meduzzen-back-app
-```
+3. The application doc will be available at:
+- [http://127.0.0.1:8000](http://127.0.0.1:8000/docs)
+- OpenAPI documentation: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
 ## Running Tests
 
@@ -62,3 +52,6 @@ To check code coverage:
 ```bash
 pytest --cov=app
 ```
+
+# Environment Variables
+Create a .env file in the root directory and add required environment as in .env.sample.
