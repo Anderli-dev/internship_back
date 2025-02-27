@@ -44,7 +44,7 @@ The application doc will be available at:
 
 Build the Docker image:
 ```bash
-docker build -t meduzzen-back-app .
+docker build -t meduzzen-back-app -f app/Dockerfile .
 ```
 Run the container:
 ```bash
