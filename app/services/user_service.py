@@ -3,21 +3,27 @@ from sqlalchemy.future import select
 from core.settings import logger
 from db.models import User
 from sqlalchemy.ext.asyncio import AsyncSession
+from db.schemas.UserSchema import UserBase, UserSignUp
 
 async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10):
     users = await db.execute(select(User).offset(skip).limit(limit))
     users = users.scalars().all()
     
+    users = [UserBase.model_validate(user.__dict__) for user in users]
     return users
 
-async def get_uses():
+async def get_user():
     pass
 
-async def create_users():
+async def create_new_user(user: UserSignUp, db: AsyncSession):
+    db_user = User(username=user.username, email=user.email, password=user.password)
+    db.add(db_user)
+    await db.commit()
+    await db.refresh(db_user)
+    return db_user
+
+async def update_user():
     pass
 
-async def update_users():
-    pass
-
-async def delete_users():
+async def delete_user():
     pass
