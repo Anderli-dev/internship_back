@@ -44,5 +44,14 @@ async def update_user_data(user_id: int, user_data: UserUpdate, db: AsyncSession
     return user
     
 
-async def delete_user():
-    pass
+async def user_delete(user_id: int, db: AsyncSession):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found!")
+
+    await db.delete(user)
+    await db.commit()
+
+    return {"message": "User deleted successfully"}
