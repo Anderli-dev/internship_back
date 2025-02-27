@@ -26,6 +26,13 @@ async def read_user(user_id: int, db: AsyncSession):
     return user
 
 async def create_new_user(user: UserSignUp, db: AsyncSession):
+    logger.debug("Checking if user exists")
+    result = await db.execute(select(User).where((User.email == user.email) | (User.username == user.username)))
+    existing_user = result.scalars().first()
+
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User with this email or username already exists")
+    
     logger.debug("Creating user")
     db_user = User(username=user.username, email=user.email, password=user.password)
     
