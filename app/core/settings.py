@@ -12,6 +12,6 @@ DATABASE_URL: str = os.getenv("DATABASE_URL")
 REDIS_URL: str = os.getenv("REDIS_URL")
 
 logger = logging.getLogger("uvicorn")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
