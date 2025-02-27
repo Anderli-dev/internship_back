@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
-from utils.hash_password import hash_password
-from db.schemas.UserSchema import UserSignUp, UsersListResponse, UserDetailResponse, UserUpdate
+from core.settings import logger
+from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
+                                   UsersListResponse, UserUpdate)
 from db.session import get_db
-from services.user_service import get_users, create_new_user, read_user, update_user_data, user_delete
+from fastapi import APIRouter, Depends, HTTPException, Response
+from services.user_service import (create_new_user, get_users, read_user,
+                                   update_user_data, user_delete)
 from sqlalchemy.ext.asyncio import AsyncSession
+from utils.hash_password import hash_password
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -13,8 +16,10 @@ async def get_all_users(db: AsyncSession = Depends(get_db)):
     total = users.__sizeof__()
     
     if not users:
+        logger.debug("No users in db!")
         return Response(status_code=204)
     
+    logger.debug("Getting all users successful")
     return UsersListResponse.model_validate({"users": users, "total": total})
 
 @router.post("/")
@@ -25,6 +30,7 @@ async def create_user(user: UserSignUp, db: AsyncSession = Depends(get_db)):
     if user is None:
         return Response(status_code=204, detail="User creation failed!")
     
+    logger.debug("Creating user successful")
     return user
     
 
@@ -32,14 +38,17 @@ async def create_user(user: UserSignUp, db: AsyncSession = Depends(get_db)):
 async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
     user = await read_user(user_id, db)
     
+    logger.debug("Getting user successful")
     return UserDetailResponse.model_validate(user.__dict__)
 
 @router.put("/{user_id}", response_model=UserUpdate)
 async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = Depends(get_db)):
     user = await update_user_data(user_id, user_data.model_dump(exclude_unset=True), db)
     
+    logger.debug("Updating user successful")
     return UserDetailResponse.model_validate(user.__dict__)
 
 @router.delete("/{user_id}")
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
+    logger.debug("Deleting user successful")
     return await user_delete(user_id, db)
