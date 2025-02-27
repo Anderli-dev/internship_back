@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
 from utils.hash_password import hash_password
-from db.schemas.UserSchema import UserSignUp, UsersListResponse, UserDetailResponse
+from db.schemas.UserSchema import UserSignUp, UsersListResponse, UserDetailResponse, UserUpdate
 from db.session import get_db
-from services.user_service import get_users, create_new_user, read_user
+from services.user_service import get_users, create_new_user, read_user, update_user_data
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -24,6 +24,7 @@ async def create_user(user: UserSignUp, db: AsyncSession = Depends(get_db)):
     
     if user is None:
         return Response(status_code=204, detail="User creation failed!")
+    
     return user
     
 
@@ -31,14 +32,13 @@ async def create_user(user: UserSignUp, db: AsyncSession = Depends(get_db)):
 async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
     user = await read_user(user_id, db)
     
-    if user is None:
-        return Response(status_code=404, content="User dose not exist!")
-    
     return UserDetailResponse.model_validate(user.__dict__)
 
-@router.put("/{user_id}")
-async def update_user():
-    pass
+@router.put("/{user_id}", response_model=UserUpdate)
+async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = Depends(get_db)):
+    user = await update_user_data(user_id, user_data.model_dump(exclude_unset=True), db)
+    
+    return UserDetailResponse.model_validate(user.__dict__)
 
 @router.delete("/{user_id}")
 async def delete_user():
