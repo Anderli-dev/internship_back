@@ -1,6 +1,9 @@
 FROM python:3.11-slim
 
-WORKDIR /
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /backend
 
 COPY requirements.txt .
 
@@ -14,4 +17,4 @@ EXPOSE 8000
 WORKDIR /app
 
 ENTRYPOINT ["python3"]
-CMD ["main.py"]
+CMD ["app/main.py"]
