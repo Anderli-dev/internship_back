@@ -12,6 +12,3 @@ async def get_redis_connection() -> aioredis:
     except aioredis.RedisError as e:
         logger.error(f"Redis conection error:{str(e)}")
         raise HTTPException(status_code=500, detail="Redis connection failed!")
-    except Exception as e:
-        logger.error(f"Unexpected error in redis_test: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error!")

@@ -1,7 +1,7 @@
 import asyncio
 import os
 from logging.config import fileConfig
-from core.settings import logger
+from app.core.settings import logger
 
 from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -24,7 +24,7 @@ if config.config_file_name is not None:
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Replace with localhost since migrations are performed locally
-DATABASE_URL = DATABASE_URL.replace("postgres:", "localhost:")
+# DATABASE_URL = DATABASE_URL.replace("postgres:", "localhost:")
 
 # Set the database URL in the Alembic configuration
 config.set_main_option("sqlalchemy.url", DATABASE_URL)

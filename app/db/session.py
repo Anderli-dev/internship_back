@@ -1,6 +1,7 @@
+from fastapi import HTTPException
 import core.settings as settings
 from core.settings import logger
-
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -17,5 +18,7 @@ async def get_db() -> AsyncSession:
     try:
         async with AsyncSessionLocal() as session:
             yield session
-    except Exception as e:
-        logger.error(f"PostgreSQL conection error:{str(e)}")
+            
+    except SQLAlchemyError as e:
+        logger.error(f"SQLAlchemyError: {str(e)}")
+        raise HTTPException(status_code=500, detail="Database connection failed!")
