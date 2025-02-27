@@ -1,16 +1,7 @@
-from routers import db_router
 import core.settings as settings
-
 import uvicorn
-
-
-from db.session import get_db
-
-from fastapi import Depends, FastAPI
-
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
-
+from fastapi import FastAPI
+from routers import db_router, user_router
 from utils.cors import add_cors_middleware
 
 app = FastAPI()
@@ -18,6 +9,7 @@ app = FastAPI()
 add_cors_middleware(app)
 
 app.include_router(db_router.router)
+app.include_router(user_router.router)
 
 @app.get("/")
 async def home() -> dict:
