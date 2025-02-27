@@ -1,6 +1,5 @@
 from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, EmailStr
-from sqlalchemy.dialects.postgresql import UUID
 
 
 class UserBase(BaseModel):
@@ -23,6 +22,6 @@ class UsersListResponse(BaseModel):
     total: int
     
 class UserDetailResponse(UserBase):
-    id: UUID
+    id: int
     
     model_config = ConfigDict(arbitrary_types_allowed=True)
