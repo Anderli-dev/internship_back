@@ -43,7 +43,7 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.put("/{user_id}", response_model=UserUpdate)
 async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = Depends(get_db)):
-    user = await update_user_data(user_id, user_data.model_dump(exclude_unset=True), db)
+    user = await update_user_data(user_id, user_data.model_dump(exclude_unset=True), db) # user_data.model_dump(exclude_unset=True) for geting not None fields
     
     logger.debug("Updating user successful")
     return UserDetailResponse.model_validate(user.__dict__)

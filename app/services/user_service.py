@@ -10,7 +10,7 @@ async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10):
     logger.debug("Getting all users")
     users = await db.execute(select(User).offset(skip).limit(limit))
     users = users.scalars().all()
-    users = [UserBase.model_validate(user.__dict__) for user in users]
+    users = [UserBase.model_validate(user.__dict__) for user in users] # Creating list of UserBase
     
     return users
 
@@ -28,10 +28,12 @@ async def read_user(user_id: int, db: AsyncSession):
 async def create_new_user(user: UserSignUp, db: AsyncSession):
     logger.debug("Creating user")
     db_user = User(username=user.username, email=user.email, password=user.password)
+    
     logger.debug("Adding user to db")
     db.add(db_user)
     await db.commit()
     await db.refresh(db_user)
+    
     return db_user
 
 async def update_user_data(user_id: int, user_data: UserUpdate, db: AsyncSession):
@@ -44,6 +46,7 @@ async def update_user_data(user_id: int, user_data: UserUpdate, db: AsyncSession
         raise HTTPException(status_code=404, detail="User not found!")
     
     logger.debug("Setting up user data")
+    # Updating not None fields
     for key, data in user_data.items():
         setattr(user, key, data)
     
