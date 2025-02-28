@@ -33,7 +33,6 @@ async def create_user(user: UserSignUp, db: AsyncSession = Depends(get_db)):
     logger.debug("Creating user successful")
     return user
     
-
 @router.get("/{user_id}", response_model=UserDetailResponse)
 async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
     user = await read_user(user_id, db)
