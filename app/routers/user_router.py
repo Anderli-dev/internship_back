@@ -1,9 +1,9 @@
 from core.settings import logger
-from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
+from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
 from db.session import get_db
-from fastapi import APIRouter, Depends, HTTPException, Response
-from services.user_service import (create_new_user, get_users, read_user,
+from fastapi import APIRouter, Depends, Header, Response
+from services.user_service import (create_new_user, get_users, read_user, token_get_me,
                                    update_user_data, user_delete)
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.hash_password import hash_password
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get("/", response_model=UsersListResponse)
 async def get_all_users(db: AsyncSession = Depends(get_db)):
     users = await get_users(db)
-    total = users.__sizeof__()
+    total = len(users)
     
     if not users:
         logger.debug("No users in db!")
@@ -51,3 +51,8 @@ async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = De
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
     logger.debug("Deleting user successful")
     return await user_delete(user_id, db)
+
+@router.get("/me/", response_model=UserBase)
+async def get_me(token: str, db: AsyncSession = Depends(get_db)):
+    user = await token_get_me(token, db) 
+    return UserBase.model_validate(user.__dict__)

@@ -17,6 +17,6 @@ async def login_for_access_token(user_data: UserSignIn, db: AsyncSession = Depen
             headers={"WWW-Authenticate": "Bearer"},
         )
         
-    access_token = await create_access_token(data={"sub": user.username})
+    access_token = await create_access_token(data={"user_email": user.email})
     
     return Token.model_validate({"access_token": access_token, "token_type": "bearer"})
