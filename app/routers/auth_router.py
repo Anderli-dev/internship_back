@@ -1,4 +1,5 @@
 from fastapi.responses import RedirectResponse
+import jwt
 from core.settings import AUTH0_AUDIENCE, AUTH0_DOMAIN, logger, CLIENT_ID, CLIENT_SECRET
 from db.schemas.TokenSchema import Token
 from db.schemas.UserSchema import UserSignIn
@@ -41,7 +42,7 @@ async def login_for_access_token_Auth0():
 async def callback(request: Request):
     code = request.query_params.get("code")
     if not code:
-        raise HTTPException(status_code=400, detail="Missing code parameter")
+        raise HTTPException(status_code=400, detail="Missing code parameter!")
 
     token_data = {
         "grant_type": "authorization_code",
@@ -54,10 +55,21 @@ async def callback(request: Request):
     response = requests.post(f"https://{AUTH0_DOMAIN}/oauth/token", json=token_data)
     
     if response.status_code != 200:
-        raise HTTPException(status_code=400, detail="Failed to fetch token")
+        raise HTTPException(status_code=400, detail="Failed to fetch token!")
 
     tokens = response.json()
-    return {"access_token": tokens["access_token"], "id_token": tokens["id_token"]}
+    id_token = tokens.get("id_token")
+
+    if not id_token:
+        raise HTTPException(status_code=400, detail="id_token not found!")
+    
+    try:
+        decoded_token = jwt.decode(id_token, options={"verify_signature": False})
+        email = decoded_token.get("email")
+    except jwt.DecodeError:
+        raise HTTPException(status_code=400, detail="Failed to decode id_token!")
+    
+    return {"access_token": tokens["access_token"], "id_token": tokens["id_token"], "email": email}
 
 @router.get("/logout/auth0")
 def logout():
