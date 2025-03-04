@@ -3,13 +3,17 @@ import os
 import sys
 from dotenv import load_dotenv
 
+from utils.get_app_url import get_app_url
+
 load_dotenv()
+
+APP_URL: str = get_app_url()
 
 HOST: str = "0.0.0.0"
 PORT: int = 8000
 
 DATABASE_URL: str = os.getenv("DATABASE_URL")
-REDIS_URL: str = os.getenv("REDIS_URL")\
+REDIS_URL: str = os.getenv("REDIS_URL")
     
 SECRET_KEY: str = os.getenv("SECRET_KEY")
 

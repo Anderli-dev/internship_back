@@ -1,6 +1,7 @@
 from urllib.parse import quote
 
-from core.settings import AUTH0_AUDIENCE, AUTH0_DOMAIN, CLIENT_ID, logger
+from core.settings import (APP_URL, AUTH0_AUDIENCE, AUTH0_DOMAIN, CLIENT_ID,
+                           logger)
 from db.models.user import User
 from db.schemas.TokenSchema import Token
 from db.schemas.UserSchema import UserSignIn
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/token", response_model=Token)
 async def login_for_access_token(user_data: UserSignIn, db: AsyncSession = Depends(get_db)):
     user = await authenticate_user(user_data.email, user_data.password, db)
+    
     if not user:
         logger.error("User incorrect username or password")
         raise HTTPException(
@@ -36,7 +38,7 @@ async def login_for_access_token_Auth0():
         f"https://{AUTH0_DOMAIN}/authorize"
         f"?response_type=code"
         f"&client_id={CLIENT_ID}"
-        f"&redirect_uri=http://localhost:8000/auth/callback"
+        f"&redirect_uri={APP_URL}/auth/callback"
         f"&audience={AUTH0_AUDIENCE}"
     )
     return RedirectResponse(auth_url)
@@ -66,6 +68,6 @@ async def callback(request: Request, db: AsyncSession = Depends(get_db)):
 
 @router.get("/logout/auth0")
 def logout():
-    return_to = quote("http://localhost:8000/docs", safe='')
+    return_to = quote(f"{APP_URL}/docs", safe='')
     logout_url = f"https://{AUTH0_DOMAIN}/v2/logout?client_id={CLIENT_ID}&returnTo={return_to}"
     return RedirectResponse(logout_url)
