@@ -1,13 +1,17 @@
-from fastapi.responses import RedirectResponse
-import jwt
-from core.settings import AUTH0_AUDIENCE, AUTH0_DOMAIN, logger, CLIENT_ID, CLIENT_SECRET
+from urllib.parse import quote
+
+from core.settings import AUTH0_AUDIENCE, AUTH0_DOMAIN, CLIENT_ID, logger
+from db.models.user import User
 from db.schemas.TokenSchema import Token
 from db.schemas.UserSchema import UserSignIn
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from services.auth import authenticate_user, create_access_token
 from sqlalchemy.ext.asyncio import AsyncSession
-import requests
+from sqlalchemy.future import select
+from utils.auth0.get_email_from_token import get_email_from_token
+from utils.auth0.get_tokens import get_tokens
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -33,45 +37,34 @@ async def login_for_access_token_Auth0():
         f"?response_type=code"
         f"&client_id={CLIENT_ID}"
         f"&redirect_uri=http://localhost:8000/auth/callback"
-        f"&scope=openid profile email"
         f"&audience={AUTH0_AUDIENCE}"
     )
     return RedirectResponse(auth_url)
 
 @router.get("/callback")
-async def callback(request: Request):
+async def callback(request: Request, db: AsyncSession = Depends(get_db)):
     code = request.query_params.get("code")
+    
     if not code:
         raise HTTPException(status_code=400, detail="Missing code parameter!")
 
-    token_data = {
-        "grant_type": "authorization_code",
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "code": code,
-        "redirect_uri": "http://localhost:8000/auth/callback"
-    }
-
-    response = requests.post(f"https://{AUTH0_DOMAIN}/oauth/token", json=token_data)
+    tokens = await get_tokens(code)
     
-    if response.status_code != 200:
-        raise HTTPException(status_code=400, detail="Failed to fetch token!")
-
-    tokens = response.json()
-    id_token = tokens.get("id_token")
-
-    if not id_token:
-        raise HTTPException(status_code=400, detail="id_token not found!")
+    email = await get_email_from_token(tokens["access_token"])
     
-    try:
-        decoded_token = jwt.decode(id_token, options={"verify_signature": False})
-        email = decoded_token.get("email")
-    except jwt.DecodeError:
-        raise HTTPException(status_code=400, detail="Failed to decode id_token!")
+    existing_user = await db.execute(select(User).filter(User.email == email))
+    print(existing_user)
+    if not existing_user:
+        db_user = User(email=email)
+        logger.debug("Adding user to db")
+        db.add(db_user)
+        await db.commit()
+        await db.refresh(db_user)
     
-    return {"access_token": tokens["access_token"], "id_token": tokens["id_token"], "email": email}
+    return {"access_token": tokens["access_token"], "email": email}
 
 @router.get("/logout/auth0")
 def logout():
-    logout_url = f"https://{AUTH0_DOMAIN}/v2/logout?returnTo=http://localhost:8000"
+    return_to = quote("http://localhost:8000/docs", safe='')
+    logout_url = f"https://{AUTH0_DOMAIN}/v2/logout?client_id={CLIENT_ID}&returnTo={return_to}"
     return RedirectResponse(logout_url)
