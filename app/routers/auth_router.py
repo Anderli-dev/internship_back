@@ -53,7 +53,8 @@ async def callback(request: Request, db: AsyncSession = Depends(get_db)):
     email = await get_email_from_token(tokens["access_token"])
     
     existing_user = await db.execute(select(User).filter(User.email == email))
-    print(existing_user)
+    existing_user = existing_user.scalars().first()
+    
     if not existing_user:
         db_user = User(email=email)
         logger.debug("Adding user to db")
