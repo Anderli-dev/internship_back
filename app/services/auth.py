@@ -3,9 +3,10 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 import jwt
+from core.settings import SECRET_KEY, logger
 from db.models import User
-from core.settings import SECRET_KEY, REDIS_URL
-from dotenv import load_dotenv
+from fastapi import HTTPException
+from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from utils.hash_password import verify_password
@@ -18,7 +19,8 @@ async def authenticate_user(user_email: str, password: str, db: AsyncSession):
     user = user.scalars().first()
     
     if not user or not verify_password(password, user.password):
-        return False
+        logger.error("User not found!")
+        raise HTTPException(status_code=404, detail="User not found!")
     
     return user
 

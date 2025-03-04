@@ -2,9 +2,10 @@ from core.settings import logger
 from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
 from db.session import get_db
-from fastapi import APIRouter, Depends, Header, Response
-from services.user_service import (create_new_user, get_users, read_user, token_get_me,
-                                   update_user_data, user_delete)
+from fastapi import APIRouter, Depends, HTTPException, Response
+from services.auth0 import verify_jwt
+from services.user_service import (create_new_user, get_users, read_user,
+                                   token_get_me, update_user_data, user_delete)
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.hash_password import hash_password
 
@@ -56,3 +57,15 @@ async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
 async def get_me(token: str, db: AsyncSession = Depends(get_db)):
     user = await token_get_me(token, db) 
     return UserBase.model_validate(user.__dict__)
+
+@router.post("/me/auth0/")
+async def auth0_me(data: dict = Depends(verify_jwt)):
+    if not data:
+        logger.error("User incorrect username or password")
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    return {"message": "You have accessed a protected route!", "data": data}
