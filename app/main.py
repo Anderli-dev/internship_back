@@ -16,14 +16,16 @@ app = FastAPI()
 add_cors_middleware(app)
 
 @app.get("/")
-async def home() -> dict:
+def home() -> dict:
     return {"status_code": 200, "detail": "ok", "result": "working"}
 
 @app.get("/redis_test")
 async def redis_test() -> dict:
     redis = await get_redis_connection()
+    
     await redis.set("test_key", "Hello, Redis!")
     value = await redis.get("test_key")
+    
     return {"redis_value": value}
 
 @app.get("/db_test")
