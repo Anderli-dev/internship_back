@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from jose import jwt
 
 
-async def get_token_payload(token, rsa_key):
+def get_token_payload(token, rsa_key):
     logger.info("Getting token payload from Auth0.")
     try:
         payload = jwt.decode(token,

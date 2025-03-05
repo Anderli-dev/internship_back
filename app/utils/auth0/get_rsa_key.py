@@ -2,7 +2,7 @@ from core.settings import logger
 from jose import jwt
 
 
-async def get_rsa_key(jwks, token):
+def get_rsa_key(jwks, token):
     logger.info("Getting rsa_key from Auth0.")
     header = jwt.get_unverified_header(token)
     rsa_key = {}

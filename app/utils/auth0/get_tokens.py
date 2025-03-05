@@ -4,7 +4,7 @@ from core.settings import (APP_URL, AUTH0_DOMAIN, CLIENT_ID, CLIENT_SECRET,
 from fastapi import HTTPException
 
 
-async def get_tokens(code):
+def get_tokens(code):
     logger.info("Getting tokens from Auth0.")
     token_data = {
         "grant_type": "authorization_code",

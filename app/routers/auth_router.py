@@ -54,9 +54,9 @@ async def callback(request: Request, db: AsyncSession = Depends(get_db)):
         logger.error("Missing code for Auth0 token.")
         raise HTTPException(status_code=400, detail="Missing code parameter!")
 
-    tokens = await get_tokens(code)
+    tokens = get_tokens(code)
     
-    email = await get_email_from_token(tokens["access_token"])
+    email = get_email_from_token(tokens["access_token"])
     
     existing_user = await db.execute(select(User).filter(User.email == email))
     existing_user = existing_user.scalars().first()
@@ -74,7 +74,7 @@ async def callback(request: Request, db: AsyncSession = Depends(get_db)):
     return {"access_token": tokens["access_token"], "email": email}
 
 @router.get("/logout/auth0")
-def logout():
+async def logout():
     logger.info("Auth0 Logout")
     return_to = quote(f"{APP_URL}/docs", safe='')
     logout_url = f"https://{AUTH0_DOMAIN}/v2/logout?client_id={CLIENT_ID}&returnTo={return_to}"
