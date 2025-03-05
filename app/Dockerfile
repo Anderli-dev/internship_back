@@ -2,9 +2,10 @@ FROM python:3.11-slim
 
 ARG APP_PORT
 
-ENV APP_PORT=${APP_PORT}
-
-WORKDIR /
+ENV APP_PORT=${APP_PORT}\
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+WORKDIR /backend
 
 COPY requirements.txt .
 
@@ -15,7 +16,5 @@ COPY . .
 
 EXPOSE ${APP_PORT}
 
-WORKDIR /app
-
 ENTRYPOINT ["python3"]
-CMD ["main.py"]
+CMD ["app/main.py"]
