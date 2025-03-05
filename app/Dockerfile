@@ -1,5 +1,7 @@
 FROM python:3.11-slim
 
+ARG APP_PORT
+
 WORKDIR /
 
 COPY requirements.txt .
@@ -9,7 +11,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY . .
 
-EXPOSE 8000
+EXPOSE ${APP_PORT}
 
 WORKDIR /app
 
