@@ -8,7 +8,7 @@ services:
       dockerfile: ./app/Dockerfile
       args:
         APP_PORT: ${APP_PORT}
-      environment:
+    environment:
       - APP_PORT=${APP_PORT}
     restart: always
     ports:

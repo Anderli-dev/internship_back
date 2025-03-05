@@ -2,6 +2,8 @@ FROM python:3.11-slim
 
 ARG APP_PORT
 
+ENV APP_PORT=${APP_PORT}
+
 WORKDIR /
 
 COPY requirements.txt .
