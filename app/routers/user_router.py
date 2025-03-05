@@ -66,6 +66,7 @@ async def get_me(token: str, db: AsyncSession = Depends(get_db)) -> UserBase:
 
 @router.post("/me/auth0/")
 async def auth0_me(data: dict = Depends(verify_jwt)) -> dict:
+    # This endpoint protected by Auth0 token
     logger.info("Getting information about yourself Auth0.")
     if not data:
         logger.error("User incorrect username or password")

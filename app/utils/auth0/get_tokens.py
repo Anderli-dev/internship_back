@@ -5,6 +5,7 @@ from fastapi import HTTPException
 
 
 def get_tokens(code: str) -> dict:
+    # Getting tokes, not only access token but may be and id_token
     logger.info("Getting tokens from Auth0.")
     token_data = {
         "grant_type": "authorization_code",

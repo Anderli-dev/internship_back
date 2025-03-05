@@ -16,6 +16,7 @@ def get_email_from_token(token: str) -> str:
         raise HTTPException(status_code=401, detail="Invalid JWT Key")
     
     payload = get_token_payload(token, rsa_key)
+    # Payload inclludes parameter "https://fast-api.example.com/email" that consist email of user
     email = payload.get("https://fast-api.example.com/email")
     
     if email is None:

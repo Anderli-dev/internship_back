@@ -35,6 +35,7 @@ async def login_for_access_token(user_data: UserSignIn, db: AsyncSession = Depen
 
 @router.get("/token/auth0")
 async def login_for_access_token_Auth0():
+    # This function redirects to callback with code
     logger.info("Auth0 token Login.")
     auth_url = (
         f"https://{AUTH0_DOMAIN}/authorize"
@@ -47,6 +48,7 @@ async def login_for_access_token_Auth0():
 
 @router.get("/callback")
 async def callback(request: Request, db: AsyncSession = Depends(get_db)) -> dict:
+    # Callback getting code for getting token from Auth0
     logger.info("Callback for Auth0 token.")
     code = request.query_params.get("code")
     
@@ -58,6 +60,7 @@ async def callback(request: Request, db: AsyncSession = Depends(get_db)) -> dict
     
     email = get_email_from_token(tokens["access_token"])
     
+    # Creating user if it dose not exist
     existing_user = await db.execute(select(User).filter(User.email == email))
     existing_user = existing_user.scalars().first()
     
