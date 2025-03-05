@@ -90,6 +90,7 @@ async def token_get_me(token: str, db: AsyncSession):
         
         user_email = decoded_jwt.get("user_email")
         if user_email is None:
+            logger.error("Invalid token!")
             raise HTTPException(status_code=401, detail="Invalid token!")
         
         user = await db.execute(select(User).filter(User.email == decoded_jwt.get("user_email")))

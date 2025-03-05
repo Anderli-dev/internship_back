@@ -13,6 +13,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("/", response_model=UsersListResponse)
 async def get_all_users(db: AsyncSession = Depends(get_db)):
+    logger.info("Getting all users.")
     users = await get_users(db)
     total = len(users)
     
@@ -25,41 +26,47 @@ async def get_all_users(db: AsyncSession = Depends(get_db)):
 
 @router.post("/")
 async def create_user(user: UserSignUp, db: AsyncSession = Depends(get_db)):
+    logger.info("Creating user.")
     user.password = hash_password(user.password)
     user = await create_new_user(user, db)
     
     if user is None:
+        logger.error("User creation failed!")
         return Response(status_code=204, detail="User creation failed!")
     
-    logger.debug("Creating user successful")
+    logger.info("Creating user successful")
     return user
     
 @router.get("/{user_id}", response_model=UserDetailResponse)
 async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
+    logger.info("Getting user info.")
     user = await read_user(user_id, db)
     
-    logger.debug("Getting user successful")
+    logger.info("Getting user successful")
     return UserDetailResponse.model_validate(user.__dict__)
 
 @router.put("/{user_id}", response_model=UserUpdate)
 async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = Depends(get_db)):
+    logger.info("Updating user.")
     user = await update_user_data(user_id, user_data.model_dump(exclude_unset=True), db) # user_data.model_dump(exclude_unset=True) for geting not None fields
     
-    logger.debug("Updating user successful")
+    logger.info("Updating user successful.")
     return UserDetailResponse.model_validate(user.__dict__)
 
 @router.delete("/{user_id}")
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
-    logger.debug("Deleting user successful")
+    logger.info("Deleting user successful.")
     return await user_delete(user_id, db)
 
 @router.get("/me/", response_model=UserBase)
 async def get_me(token: str, db: AsyncSession = Depends(get_db)):
+    logger.info("Getting information about yourself.")
     user = await token_get_me(token, db) 
     return UserBase.model_validate(user.__dict__)
 
 @router.post("/me/auth0/")
 async def auth0_me(data: dict = Depends(verify_jwt)):
+    logger.info("Getting information about yourself Auth0.")
     if not data:
         logger.error("User incorrect username or password")
         raise HTTPException(

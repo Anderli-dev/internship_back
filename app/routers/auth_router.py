@@ -18,10 +18,11 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(user_data: UserSignIn, db: AsyncSession = Depends(get_db)):
+    logger.info("Own token Login.")
     user = await authenticate_user(user_data.email, user_data.password, db)
     
     if not user:
-        logger.error("User incorrect username or password")
+        logger.error("User incorrect username or password!")
         raise HTTPException(
             status_code=401,
             detail="Incorrect username or password",
@@ -29,11 +30,12 @@ async def login_for_access_token(user_data: UserSignIn, db: AsyncSession = Depen
         )
         
     access_token = await create_access_token(data={"user_email": user.email})
-    
+    logger.info("Own token Login success!")
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/token/auth0")
 async def login_for_access_token_Auth0():
+    logger.info("Auth0 token Login.")
     auth_url = (
         f"https://{AUTH0_DOMAIN}/authorize"
         f"?response_type=code"
@@ -45,9 +47,11 @@ async def login_for_access_token_Auth0():
 
 @router.get("/callback")
 async def callback(request: Request, db: AsyncSession = Depends(get_db)):
+    logger.info("Callback for Auth0 token.")
     code = request.query_params.get("code")
     
     if not code:
+        logger.error("Missing code for Auth0 token.")
         raise HTTPException(status_code=400, detail="Missing code parameter!")
 
     tokens = await get_tokens(code)
@@ -58,16 +62,20 @@ async def callback(request: Request, db: AsyncSession = Depends(get_db)):
     existing_user = existing_user.scalars().first()
     
     if not existing_user:
+        logger.info("Auth0 user dose not exist.")
         db_user = User(email=email)
         logger.debug("Adding user to db")
         db.add(db_user)
         await db.commit()
         await db.refresh(db_user)
+        logger.info("Auth0 user created.")
     
+    logger.info("Auth0 token Login success!")
     return {"access_token": tokens["access_token"], "email": email}
 
 @router.get("/logout/auth0")
 def logout():
+    logger.info("Auth0 Logout")
     return_to = quote(f"{APP_URL}/docs", safe='')
     logout_url = f"https://{AUTH0_DOMAIN}/v2/logout?client_id={CLIENT_ID}&returnTo={return_to}"
     return RedirectResponse(logout_url)

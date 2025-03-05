@@ -1,4 +1,5 @@
 import jwt
+from core.settings import logger
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
@@ -10,6 +11,7 @@ token_auth_sheme = HTTPBearer()
 
 
 async def verify_jwt(credentials: HTTPAuthorizationCredentials = Depends(token_auth_sheme)):
+    logger.info("Auth0 token verification.")
     try:
         token = credentials.credentials
         
@@ -18,19 +20,25 @@ async def verify_jwt(credentials: HTTPAuthorizationCredentials = Depends(token_a
         rsa_key = await get_rsa_key(jwks, token)
 
         if not rsa_key:
+            logger.error("Auth0 token invalid JWT Key.")
             raise HTTPException(status_code=401, detail="Invalid JWT Key")
 
         payload = get_token_payload(token, rsa_key)
         
         data = payload.get("sub")
         if data is None:
+            logger.error("Auth0 invalid token.")
             raise HTTPException(status_code=401, detail="Invalid token")
-
+        
+        logger.info("Auth0 token verification success.")
         return payload
 
     except jwt.ExpiredSignatureError:
+        logger.error("Auth0 token expired.")
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.JWTClaimsError:
+        logger.error("Auth0 token invalid claims.")
         raise HTTPException(status_code=401, detail="Invalid claims")
     except JWTError:
+        logger.error("Auth0 invalid token.")
         raise HTTPException(status_code=401, detail="Invalid token")
