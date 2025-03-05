@@ -8,7 +8,7 @@ router = APIRouter(prefix="/db_tests", tags=["tests"])
 
 
 @router.get("/redis", response_model=dict[str, str])
-async def redis_test():
+async def redis_test() -> dict:
     logger.info("Redist conection test.")
     test_response = await db_service.redis_test()
     
@@ -18,7 +18,7 @@ async def redis_test():
     return {"redis_test_response": test_response}
     
 @router.get("/psql", response_model=dict[str, str | int])
-async def test_db_connection(db: AsyncSession = Depends(get_db)):
+async def test_db_connection(db: AsyncSession = Depends(get_db)) -> dict:
     logger.info("PSQL conection test.")
     db_response = await db_service.test_db_connection(db)
     

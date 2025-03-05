@@ -9,7 +9,7 @@ from sqlalchemy.future import select
 from services.auth import ALGORITHM
 
 
-async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10):
+async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10) -> list[UserBase]:
     logger.debug("Getting all users")
     users = await db.execute(select(User).offset(skip).limit(limit))
     users = users.scalars().all()
@@ -17,7 +17,7 @@ async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10):
     
     return users
 
-async def read_user(user_id: int, db: AsyncSession):
+async def read_user(user_id: int, db: AsyncSession) -> User:
     logger.debug("Getting user")
     user = await db.execute(select(User).filter(User.id == user_id))
     user = user.scalars().first()
@@ -28,7 +28,7 @@ async def read_user(user_id: int, db: AsyncSession):
     
     return user
 
-async def create_new_user(user: UserSignUp, db: AsyncSession):
+async def create_new_user(user: UserSignUp, db: AsyncSession) -> User:
     logger.debug("Checking if user exists")
     result = await db.execute(select(User).where((User.email == user.email) | (User.username == user.username)))
     existing_user = result.scalars().first()
@@ -46,7 +46,7 @@ async def create_new_user(user: UserSignUp, db: AsyncSession):
     
     return db_user
 
-async def update_user_data(user_id: int, user_data: UserUpdate, db: AsyncSession):
+async def update_user_data(user_id: int, user_data: UserUpdate, db: AsyncSession) -> User:
     logger.debug("Updating user")
     user = await db.execute(select(User).filter(User.id == user_id))
     user = user.scalars().first()
@@ -67,7 +67,7 @@ async def update_user_data(user_id: int, user_data: UserUpdate, db: AsyncSession
     return user
     
 
-async def user_delete(user_id: int, db: AsyncSession):
+async def user_delete(user_id: int, db: AsyncSession) -> dict:
     logger.debug("Deleting user")
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()
@@ -82,7 +82,7 @@ async def user_delete(user_id: int, db: AsyncSession):
 
     return {"message": "User deleted successfully"}
 
-async def token_get_me(token: str, db: AsyncSession):
+async def token_get_me(token: str, db: AsyncSession) -> User:
     logger.debug("Getting user by token")
     try:
         loop = asyncio.get_running_loop()
@@ -102,8 +102,11 @@ async def token_get_me(token: str, db: AsyncSession):
         
         return user
     except jwt.ExpiredSignatureError:
+        logger.error("Token expired!")
         raise HTTPException(status_code=401, detail="Token expired!")
     except jwt.InvalidTokenError:
+        logger.error("Invalid token!")
         raise HTTPException(status_code=401, detail="Invalid token!")
     except Exception as e:
-        print(e)
+        logger.error("Token error!")
+        raise HTTPException(status_code=401, detail="Token error!")

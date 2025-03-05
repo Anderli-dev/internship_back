@@ -17,7 +17,7 @@ from utils.auth0.get_tokens import get_tokens
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/token", response_model=Token)
-async def login_for_access_token(user_data: UserSignIn, db: AsyncSession = Depends(get_db)):
+async def login_for_access_token(user_data: UserSignIn, db: AsyncSession = Depends(get_db)) -> dict:
     logger.info("Own token Login.")
     user = await authenticate_user(user_data.email, user_data.password, db)
     
@@ -46,7 +46,7 @@ async def login_for_access_token_Auth0():
     return RedirectResponse(auth_url)
 
 @router.get("/callback")
-async def callback(request: Request, db: AsyncSession = Depends(get_db)):
+async def callback(request: Request, db: AsyncSession = Depends(get_db)) -> dict:
     logger.info("Callback for Auth0 token.")
     code = request.query_params.get("code")
     

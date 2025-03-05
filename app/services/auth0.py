@@ -10,7 +10,7 @@ from utils.auth0.get_token_payload import get_token_payload
 token_auth_sheme = HTTPBearer()
 
 
-async def verify_jwt(credentials: HTTPAuthorizationCredentials = Depends(token_auth_sheme)):
+async def verify_jwt(credentials: HTTPAuthorizationCredentials = Depends(token_auth_sheme)) -> dict:
     logger.info("Auth0 token verification.")
     try:
         token = credentials.credentials

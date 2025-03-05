@@ -14,7 +14,7 @@ from utils.hash_password import verify_password
 ALGORITHM: str = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-async def authenticate_user(user_email: str, password: str, db: AsyncSession):
+async def authenticate_user(user_email: str, password: str, db: AsyncSession) -> User:
     logger.info("User authentication.")
     user = await db.execute(select(User).filter(User.email == user_email))
     user = user.scalars().first()
@@ -26,7 +26,7 @@ async def authenticate_user(user_email: str, password: str, db: AsyncSession):
     logger.info("User authentication success.")
     return user
 
-async def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+async def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     logger.info("Creating token.")
     to_encode = data.copy()
     expire = datetime.now() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))

@@ -5,7 +5,7 @@ from utils.auth0.get_rsa_key import get_rsa_key
 from utils.auth0.get_token_payload import get_token_payload
 
 
-def get_email_from_token(token):
+def get_email_from_token(token: str) -> str:
     logger.info("Getting email from Auth0 token.")
     jwks = get_jwks()
     
