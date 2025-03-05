@@ -1,10 +1,22 @@
-import os
-from dotenv import load_dotenv
+from pydantic_settings import BaseSettings
+import pathlib
 
-load_dotenv()
+class Settings(BaseSettings):
+    app_name: str = "MyApp"
+    debug: bool = False
+    
+    app_host: str
+    app_port: int
+    
+    redis_url: str
+    database_url: str
 
-HOST: str = "0.0.0.0"
-PORT: int = 8000
+    postgres_user: str
+    postgres_password: str
+    postgres_db: str
 
-DATABASE_URL: str = os.getenv("DATABASE_URL")
-REDIS_URL: str = os.getenv("REDIS_URL")
+    class Config:
+        env_file = str(pathlib.Path(__file__).resolve().parents[2] / ".env")
+        
+
+settings = Settings()
