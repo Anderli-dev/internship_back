@@ -14,7 +14,6 @@ async def verify_jwt(credentials: HTTPAuthorizationCredentials = Depends(token_a
     logger.info("Auth0 token verification.")
     try:
         token = credentials.credentials
-        
         jwks = get_jwks()
         
         rsa_key = get_rsa_key(jwks, token)
@@ -31,7 +30,7 @@ async def verify_jwt(credentials: HTTPAuthorizationCredentials = Depends(token_a
             raise HTTPException(status_code=401, detail="Invalid token")
         
         logger.info("Auth0 token verification success.")
-        return data
+        return payload
 
     except jwt.ExpiredSignatureError:
         logger.error("Auth0 token expired.")

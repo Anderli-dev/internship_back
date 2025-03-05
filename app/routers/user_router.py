@@ -1,3 +1,4 @@
+from db.models.user import User
 from core.settings import logger
 from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
@@ -8,6 +9,7 @@ from services.user_service import (create_new_user, get_users, read_user,
                                    token_get_me, update_user_data, user_delete)
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.hash_password import hash_password
+from sqlalchemy.future import select
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -45,10 +47,19 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db)) -> UserDeta
     logger.info("Getting user successful")
     return UserDetailResponse.model_validate(user.__dict__)
 
-@router.put("/{user_id}", response_model=UserUpdate)
-async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = Depends(get_db)) -> UserDetailResponse:
+@router.put("/{user_id}", response_model=UserDetailResponse)
+async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = Depends(get_db), token_data: dict = Depends(verify_jwt)) -> UserDetailResponse:
     logger.info("Updating user.")
-    user = await update_user_data(user_id, user_data.model_dump(exclude_unset=True), db) # user_data.model_dump(exclude_unset=True) for geting not None fields
+
+    user_by_id = await db.execute(select(User).filter(User.id == user_id))
+    user_by_id = user_by_id.scalars().first()
+    
+    token_email = token_data["https://fast-api.example.com/email"]
+    
+    if user_by_id.email == token_email:
+        user = await update_user_data(user_id, user_data.model_dump(exclude_unset=True), db) # user_data.model_dump(exclude_unset=True) for geting not None fields
+    else:
+        raise HTTPException(status_code=401, detail="Incorrect user id!",)
     
     logger.info("Updating user successful.")
     return UserDetailResponse.model_validate(user.__dict__)
@@ -59,10 +70,10 @@ async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)) -> dict:
     return await user_delete(user_id, db)
 
 @router.get("/me/", response_model=UserBase)
-async def get_me(token: str, db: AsyncSession = Depends(get_db)) -> UserBase:
+async def get_me(token: str) -> UserBase:
     logger.info("Getting information about yourself.")
-    user = await token_get_me(token, db) 
-    return UserBase.model_validate(user.__dict__)
+    user = await token_get_me(token) 
+    return user
 
 @router.post("/me/auth0/")
 async def auth0_me(data: dict = Depends(verify_jwt)) -> dict:

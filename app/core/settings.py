@@ -25,6 +25,6 @@ CLIENT_ID: str = os.getenv("CLIENT_ID")
 ALGORITHMS: str = ["RS256"]
 
 logger: Logger = logging.getLogger("uvicorn")
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)

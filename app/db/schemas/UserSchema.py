@@ -23,9 +23,16 @@ class UserSignIn(BaseModel):
     email: EmailStr
     password: str
     
+    @field_validator("password")
+    def validate_password(cls, value: str) -> str:
+        if len(value) < 6:
+            raise ValueError("Password must be at least 6 characters long")
+        return value
+    
+    
 class UserUpdate(BaseModel):
     username: Optional[str] = None
-    email: Optional[EmailStr] = None
+    password: Optional[str] = None
     
 class UsersListResponse(BaseModel):
     users: List[UserBase]

@@ -1,12 +1,16 @@
 import asyncio
+
 import jwt
 from core.settings import SECRET_KEY, logger
 from db.models import User
-from db.schemas.UserSchema import UserBase, UserSignUp, UserUpdate
-from fastapi import HTTPException
+from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,
+                                   UserUpdate)
+from db.session import get_db
+from fastapi import Depends, HTTPException
+from services.auth import ALGORITHM
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from services.auth import ALGORITHM
+from utils.hash_password import hash_password
 
 
 async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10) -> list[UserBase]:
@@ -58,6 +62,8 @@ async def update_user_data(user_id: int, user_data: UserUpdate, db: AsyncSession
     logger.debug("Setting up user data")
     # Updating not None fields
     for key, data in user_data.items():
+        if key == "password":
+            data = hash_password(data)
         setattr(user, key, data)
     
     logger.debug("Saving new user data in db")
@@ -82,7 +88,7 @@ async def user_delete(user_id: int, db: AsyncSession) -> dict:
 
     return {"message": "User deleted successfully"}
 
-async def token_get_me(token: str, db: AsyncSession) -> User:
+async def token_get_me(token: str, db: AsyncSession = Depends(get_db)) -> UserDetailResponse:
     logger.debug("Getting user by token")
     try:
         loop = asyncio.get_running_loop()
@@ -100,7 +106,7 @@ async def token_get_me(token: str, db: AsyncSession) -> User:
             logger.error("User not found!")
             raise HTTPException(status_code=404, detail="User not found!")
         
-        return user
+        return UserDetailResponse.model_validate(user.__dict__)
     except jwt.ExpiredSignatureError:
         logger.error("Token expired!")
         raise HTTPException(status_code=401, detail="Token expired!")
