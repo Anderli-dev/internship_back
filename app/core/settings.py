@@ -1,6 +1,6 @@
 from typing import List
 from pydantic import computed_field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 import pathlib
 
 class Settings(BaseSettings):
@@ -29,8 +29,6 @@ class Settings(BaseSettings):
     
     cors_origins: List[str]
     
-    class Config:
-        env_file = str(pathlib.Path(__file__).resolve().parents[2] / ".env")
+    model_config = SettingsConfigDict(env_file=str(pathlib.Path(__file__).resolve().parents[2] / ".env"))
         
-
 settings = Settings()
