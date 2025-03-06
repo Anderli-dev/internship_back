@@ -1,3 +1,4 @@
+from typing import List
 from pydantic import computed_field
 from pydantic_settings import BaseSettings
 import pathlib
@@ -26,12 +27,7 @@ class Settings(BaseSettings):
         return (f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@"
                 f"{self.postgres_host}:{self.postgres_port}/{self.postgres_db}")
     
-    cors_origins: str
-    
-    @computed_field
-    @property
-    def cors_origins_list(self) -> list[str]:
-        return self.cors_origins.split(",")
+    cors_origins: List[str]
     
     class Config:
         env_file = str(pathlib.Path(__file__).resolve().parents[2] / ".env")

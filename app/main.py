@@ -17,6 +17,7 @@ add_cors_middleware(app)
 
 @app.get("/")
 def home() -> dict:
+    print(settings.cors_origins)
     return {"status_code": 200, "detail": "ok", "result": "working"}
 
 @app.get("/redis_test")
