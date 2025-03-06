@@ -1,3 +1,5 @@
+.env.sample
+
 __pycache__/
 *.pyc
 *.pyo
@@ -29,3 +31,10 @@ build/
 Dockerfile
 docker-compose.yml
 .dockerignore
+
+README.md
+
+.gitignore
+.git
+
+venv/
