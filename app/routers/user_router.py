@@ -1,5 +1,6 @@
+import requests
+from core.settings import AUTH0_DOMAIN, logger
 from db.models.user import User
-from core.settings import logger
 from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
 from db.session import get_db
@@ -8,8 +9,9 @@ from services.auth0 import verify_jwt
 from services.user_service import (create_new_user, get_users, read_user,
                                    token_get_me, update_user_data, user_delete)
 from sqlalchemy.ext.asyncio import AsyncSession
-from utils.hash_password import hash_password
 from sqlalchemy.future import select
+from utils.auth0.get_management_token import get_management_token
+from utils.hash_password import hash_password
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -65,8 +67,20 @@ async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = De
     return UserDetailResponse.model_validate(user.__dict__)
 
 @router.delete("/{user_id}")
-async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)) -> dict:
+async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), token_data: dict = Depends(verify_jwt)) -> dict:
     logger.info("Deleting user successful.")
+    
+    token = await get_management_token()
+    
+    url = f'https://{AUTH0_DOMAIN}/api/v2/users/{token_data["sub"]}'
+    headers = {'Authorization': f'Bearer {token}'}
+
+    response = requests.delete(url, headers=headers)
+    
+    if response.status_code == 204:
+        return {"message": "Користувача успішно видалено"}
+    else:
+        raise HTTPException(status_code=response.status_code, detail=response.text)
     return await user_delete(user_id, db)
 
 @router.get("/me/", response_model=UserBase)

@@ -7,7 +7,7 @@ from fastapi import HTTPException
 def get_tokens(code: str) -> dict:
     # Getting tokes, not only access token but may be and id_token
     logger.info("Getting tokens from Auth0.")
-    token_data = {
+    json = {
         "grant_type": "authorization_code",
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
@@ -15,7 +15,7 @@ def get_tokens(code: str) -> dict:
         "redirect_uri": f"{APP_URL}/auth/callback"
     }
 
-    response = requests.post(f"https://{AUTH0_DOMAIN}/oauth/token", json=token_data)
+    response = requests.post(f"https://{AUTH0_DOMAIN}/oauth/token", json=json)
     
     if response.status_code != 200:
         logger.info("Getting tokens from Auth0 error: failed to fetch token.")
