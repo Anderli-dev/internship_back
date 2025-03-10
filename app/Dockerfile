@@ -1,6 +1,11 @@
 FROM python:3.11-slim
 
-WORKDIR /
+ARG APP_PORT
+
+ENV APP_PORT=${APP_PORT}\
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+WORKDIR /backend
 
 COPY requirements.txt .
 
@@ -9,9 +14,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY . .
 
-EXPOSE 8000
-
-WORKDIR /app
+EXPOSE ${APP_PORT}
 
 ENTRYPOINT ["python3"]
-CMD ["main.py"]
+CMD ["app/main.py"]
