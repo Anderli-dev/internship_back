@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     @property
     def redis_url(self) -> str:
         return (f"redis://{self.redis_host}:{self.redis_port}")
-      
+
     postgres_user: str
     postgres_password: str
     postgres_db: str

@@ -1,15 +1,13 @@
-from core.settings import settings
 import uvicorn
-
+from core.settings import settings
 from db.redis import get_redis_connection
 from db.session import get_db
-
 from fastapi import Depends, FastAPI
-
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from utils.cors import add_cors_middleware
+
+from core.logger import logger
 
 app = FastAPI()
 
