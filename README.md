@@ -41,6 +41,14 @@ docker-compose up --build
 - [http://127.0.0.1:8000](http://127.0.0.1:8000)
 - OpenAPI documentation: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
+## Database Migrations with Alembic
+Alembic is used for database migrations.
+Apply migrations using:
+```bash
+alembic upgrade head
+```
+
+If needed, you can downgrade to the previous version:
 ## Running Tests
 
 Run the test suite using `pytest`:

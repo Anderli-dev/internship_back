@@ -1,15 +1,13 @@
-from core.settings import settings
 import uvicorn
-
+from core.settings import settings
 from db.redis import get_redis_connection
 from db.session import get_db
-
 from fastapi import Depends, FastAPI
-
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from utils.cors import add_cors_middleware
+
+from core.logger import logger
 
 app = FastAPI()
 
@@ -31,10 +29,12 @@ async def redis_test() -> dict:
 
 @app.get("/db_test")
 async def test_db_connection(db: AsyncSession = Depends(get_db)) -> dict:
+    logger.info("PostgreSQL test.")
     try:
         result = await db.execute(text("SELECT 1"))
         return {"db_status": "Connected", "result": result.scalar()}
     except Exception as e:
+        logger.error(f"PostgreSQL conection error:{str(e)}")
         return {"db_status": "Error", "details": str(e)}
     
 if __name__ == "__main__":
