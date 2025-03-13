@@ -2,7 +2,6 @@ from typing import List, Optional
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import UUID
 
-
 class UserBase(BaseModel):
     username: str
     email: EmailStr
