@@ -1,12 +1,13 @@
 from core.logger import logger
+from db.models.user import User
 from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
 from db.session import get_db
-from fastapi import APIRouter, Depends, HTTPException, Response
-from services.auth0 import verify_auth0_jwt
+from fastapi import APIRouter, Depends, Response
 from services.user_service import (create_new_user, get_users, read_user,
-                                   token_get_me, update_user_data, user_delete)
+                                   update_user_data, user_delete)
 from sqlalchemy.ext.asyncio import AsyncSession
+from utils.get_current_user import get_current_user
 from utils.hash_password import hash_password
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -58,22 +59,7 @@ async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)) -> dict:
     logger.info("Deleting user successful.")
     return await user_delete(user_id, db)
 
-@router.get("/me/", response_model=UserBase)
-async def get_me(token: str, db: AsyncSession = Depends(get_db)) -> UserBase:
+@router.get("/me/", response_model=UserDetailResponse)
+async def get_me(user: User = Depends(get_current_user)) -> UserDetailResponse:
     logger.info("Getting information about yourself.")
-    user = await token_get_me(token, db) 
-    return UserBase.model_validate(user.__dict__)
-
-@router.post("/me/auth0/")
-async def auth0_me(data: dict = Depends(verify_auth0_jwt)) -> dict:
-    # This endpoint protected by Auth0 token
-    logger.info("Getting information about yourself Auth0.")
-    if not data:
-        logger.error("User incorrect username or password")
-        raise HTTPException(
-            status_code=401,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-        
-    return {"message": "You have accessed a protected route!", "data": data}
+    return UserDetailResponse.model_validate(user.__dict__)

@@ -8,7 +8,6 @@ from db.schemas.UserSchema import UserBase, UserSignUp, UserUpdate
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from services.auth import ALGORITHM
 
 
 async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10) -> list[UserBase]:
@@ -83,32 +82,3 @@ async def user_delete(user_id: int, db: AsyncSession) -> dict:
     await db.commit()
 
     return {"message": "User deleted successfully"}
-
-async def token_get_me(token: str, db: AsyncSession) -> User:
-    logger.debug("Getting user by token")
-    try:
-        loop = asyncio.get_running_loop()
-        decoded_jwt = await loop.run_in_executor(None, jwt.decode, token, settings.secret_key, ALGORITHM)
-        
-        user_email = decoded_jwt.get("user_email")
-        if user_email is None:
-            logger.error("Invalid token!")
-            raise HTTPException(status_code=401, detail="Invalid token!")
-        
-        user = await db.execute(select(User).filter(User.email == decoded_jwt.get("user_email")))
-        user = user.scalars().first()
-        
-        if not user:
-            logger.error("User not found!")
-            raise HTTPException(status_code=404, detail="User not found!")
-        
-        return user
-    except exceptions.ExpiredSignatureError:
-        logger.error("Token expired!")
-        raise HTTPException(status_code=401, detail="Token expired!")
-    except exceptions.JWEInvalidAuth:
-        logger.error("Invalid token!")
-        raise HTTPException(status_code=401, detail="Invalid token!")
-    except Exception as e:
-        logger.error(f"Token error: {e}")
-        raise HTTPException(status_code=401, detail="Token error!")
