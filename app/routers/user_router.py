@@ -3,7 +3,7 @@ from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException, Response
-from services.auth0 import verify_jwt
+from services.auth0 import verify_auth0_jwt
 from services.user_service import (create_new_user, get_users, read_user,
                                    token_get_me, update_user_data, user_delete)
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -65,7 +65,7 @@ async def get_me(token: str, db: AsyncSession = Depends(get_db)) -> UserBase:
     return UserBase.model_validate(user.__dict__)
 
 @router.post("/me/auth0/")
-async def auth0_me(data: dict = Depends(verify_jwt)) -> dict:
+async def auth0_me(data: dict = Depends(verify_auth0_jwt)) -> dict:
     # This endpoint protected by Auth0 token
     logger.info("Getting information about yourself Auth0.")
     if not data:

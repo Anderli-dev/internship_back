@@ -12,7 +12,7 @@ def get_tokens(code: str) -> dict:
         "client_id": settings.client_id,
         "client_secret": settings.client_secret,
         "code": code,
-        "redirect_uri": f"{settings.auth0_domain}/auth/callback"
+        "redirect_uri": f"http://{settings.auth0_app_host}:{settings.app_port}/auth/callback"
     }
 
     response = requests.post(f"https://{settings.auth0_domain}/oauth/token", json=token_data)

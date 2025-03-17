@@ -41,7 +41,7 @@ async def login_for_access_token_Auth0():
         f"https://{settings.auth0_domain}/authorize"
         f"?response_type=code"
         f"&client_id={settings.client_id}"
-        f"&redirect_uri={settings.auth0_domain}/auth/callback"
+        f"&redirect_uri=http://{settings.auth0_app_host}:{settings.app_port}/auth/callback"
         f"&audience={settings.auth0_audience}"
     )
     return RedirectResponse(auth_url)
@@ -79,6 +79,6 @@ async def callback(request: Request, db: AsyncSession = Depends(get_db)) -> dict
 @router.get("/logout/auth0")
 async def logout():
     logger.info("Auth0 Logout")
-    return_to = quote(f"{settings.auth0_domain}/docs", safe='')
+    return_to = quote(f"http://{settings.auth0_app_host}:{settings.app_port}/docs", safe='')
     logout_url = f"https://{settings.auth0_domain}/v2/logout?client_id={settings.client_id}&returnTo={return_to}"
     return RedirectResponse(logout_url)

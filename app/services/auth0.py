@@ -6,10 +6,9 @@ from utils.auth0.get_jwks import get_jwks
 from utils.auth0.get_rsa_key import get_rsa_key
 from utils.auth0.get_token_payload import get_token_payload
 
-token_auth_sheme = HTTPBearer()
+security = HTTPBearer()
 
-
-async def verify_jwt(credentials: HTTPAuthorizationCredentials = Depends(token_auth_sheme)) -> dict:
+async def verify_auth0_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     logger.info("Auth0 token verification.")
     try:
         token = credentials.credentials

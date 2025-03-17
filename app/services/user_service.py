@@ -1,5 +1,6 @@
 import asyncio
-import jwt
+from jose import exceptions
+from jose import jwt
 from core.logger import logger
 from core.settings import settings
 from db.models import User
@@ -102,12 +103,12 @@ async def token_get_me(token: str, db: AsyncSession) -> User:
             raise HTTPException(status_code=404, detail="User not found!")
         
         return user
-    except jwt.ExpiredSignatureError:
+    except exceptions.ExpiredSignatureError:
         logger.error("Token expired!")
         raise HTTPException(status_code=401, detail="Token expired!")
-    except jwt.InvalidTokenError:
+    except exceptions.JWEInvalidAuth:
         logger.error("Invalid token!")
         raise HTTPException(status_code=401, detail="Invalid token!")
     except Exception as e:
-        logger.error("Token error!")
+        logger.error(f"Token error: {e}")
         raise HTTPException(status_code=401, detail="Token error!")
