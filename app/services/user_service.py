@@ -1,16 +1,12 @@
-import asyncio
-
-import jwt
-from core.settings import SECRET_KEY, logger
+from core.logger import logger
 from db.models import User
-from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,
+from db.schemas.UserSchema import (UserBase, UserSignUp,
                                    UserUpdate)
-from db.session import get_db
-from fastapi import Depends, HTTPException
-from services.auth import ALGORITHM
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from utils.hash_password import hash_password
+
 
 
 async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10) -> list[UserBase]:
@@ -72,7 +68,6 @@ async def update_user_data(user_id: int, user_data: UserUpdate, db: AsyncSession
     
     return user
     
-
 async def user_delete(user_id: int, db: AsyncSession) -> dict:
     logger.debug("Deleting user")
     result = await db.execute(select(User).where(User.id == user_id))
@@ -87,32 +82,3 @@ async def user_delete(user_id: int, db: AsyncSession) -> dict:
     await db.commit()
 
     return {"message": "User deleted successfully"}
-
-async def token_get_me(token: str, db: AsyncSession = Depends(get_db)) -> UserDetailResponse:
-    logger.debug("Getting user by token")
-    try:
-        loop = asyncio.get_running_loop()
-        decoded_jwt = await loop.run_in_executor(None, jwt.decode, token, SECRET_KEY, ALGORITHM)
-        
-        user_email = decoded_jwt.get("user_email")
-        if user_email is None:
-            logger.error("Invalid token!")
-            raise HTTPException(status_code=401, detail="Invalid token!")
-        
-        user = await db.execute(select(User).filter(User.email == decoded_jwt.get("user_email")))
-        user = user.scalars().first()
-        
-        if not user:
-            logger.error("User not found!")
-            raise HTTPException(status_code=404, detail="User not found!")
-        
-        return UserDetailResponse.model_validate(user.__dict__)
-    except jwt.ExpiredSignatureError:
-        logger.error("Token expired!")
-        raise HTTPException(status_code=401, detail="Token expired!")
-    except jwt.InvalidTokenError:
-        logger.error("Invalid token!")
-        raise HTTPException(status_code=401, detail="Invalid token!")
-    except Exception as e:
-        logger.error("Token error!")
-        raise HTTPException(status_code=401, detail="Token error!")

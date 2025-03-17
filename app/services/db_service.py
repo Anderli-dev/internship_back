@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from core.settings import logger
+from core.logger import logger
 from db.redis import get_redis_connection
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession

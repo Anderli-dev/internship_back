@@ -1,16 +1,22 @@
 import requests
-from core.settings import AUTH0_DOMAIN, logger
+from utils.auth0.get_jwks import get_jwks
+from utils.auth0.get_rsa_key import get_rsa_key
+from core.logger import logger
+from core.settings import settings
 from db.models.user import User
-from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,
+from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException, Response
-from services.auth0 import verify_jwt
+from services.auth import verify_jwt
 from services.user_service import (create_new_user, get_users, read_user,
-                                   token_get_me, update_user_data, user_delete)
+                                   update_user_data, user_delete)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from utils.auth0.get_management_token import get_management_token
+from utils.auth0.get_token_payload import get_token_payload
+from utils.get_current_user import (get_current_user,
+                                    get_current_user_with_token)
 from utils.hash_password import hash_password
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -50,15 +56,10 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db)) -> UserDeta
     return UserDetailResponse.model_validate(user.__dict__)
 
 @router.put("/{user_id}", response_model=UserDetailResponse)
-async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = Depends(get_db), token_data: dict = Depends(verify_jwt)) -> UserDetailResponse:
+async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = Depends(get_db), user_from_token: User = Depends(get_current_user)) -> UserDetailResponse:
     logger.info("Updating user.")
-
-    user_by_id = await db.execute(select(User).filter(User.id == user_id))
-    user_by_id = user_by_id.scalars().first()
     
-    token_email = token_data["https://fast-api.example.com/email"]
-    
-    if user_by_id.email == token_email:
+    if user_id == user_from_token.id:
         user = await update_user_data(user_id, user_data.model_dump(exclude_unset=True), db) # user_data.model_dump(exclude_unset=True) for geting not None fields
     else:
         raise HTTPException(status_code=401, detail="Incorrect user id!",)
@@ -67,38 +68,37 @@ async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = De
     return UserDetailResponse.model_validate(user.__dict__)
 
 @router.delete("/{user_id}")
-async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), token_data: dict = Depends(verify_jwt)) -> dict:
-    logger.info("Deleting user successful.")
+async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), user_n_token = Depends(get_current_user_with_token)) -> dict:
+    logger.info("Deleting user")
     
-    token = await get_management_token()
+    user_from_token, token = user_n_token
     
-    url = f'https://{AUTH0_DOMAIN}/api/v2/users/{token_data["sub"]}'
-    headers = {'Authorization': f'Bearer {token}'}
-
-    response = requests.delete(url, headers=headers)
-    
-    if response.status_code == 204:
-        return {"message": "Користувача успішно видалено"}
-    else:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
-    return await user_delete(user_id, db)
-
-@router.get("/me/", response_model=UserBase)
-async def get_me(token: str) -> UserBase:
-    logger.info("Getting information about yourself.")
-    user = await token_get_me(token) 
-    return user
-
-@router.post("/me/auth0/")
-async def auth0_me(data: dict = Depends(verify_jwt)) -> dict:
-    # This endpoint protected by Auth0 token
-    logger.info("Getting information about yourself Auth0.")
-    if not data:
-        logger.error("User incorrect username or password")
-        raise HTTPException(
-            status_code=401,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    if user_id == user_from_token.id:
+        try:
+            jwks = get_jwks()
+            rsa_key = get_rsa_key(jwks, token)
+            if not rsa_key:
+                logger.error("Auth0 token invalid JWT Key.")
+                raise HTTPException(status_code=401, detail="Invalid JWT Key")
+            token_data = get_token_payload(token, rsa_key)
+        except HTTPException:
+            pass
         
-    return {"message": "You have accessed a protected route!", "data": data}
+        token = await get_management_token()
+        auth0_user_id = str(token_data["sub"]).split("|")[1]
+        
+        url = f'https://{settings.auth0_domain}/api/v2/users/{auth0_user_id}'
+        headers = {'Authorization': f'Bearer {token}'}
+
+        response = requests.delete(url, headers=headers)
+        
+        if response.status_code == 204:
+            return {"message": "User deleted successfully"}
+    
+    return await user_delete(user_id, db)
+    
+
+@router.get("/me/", response_model=UserDetailResponse)
+async def get_me(user: User = Depends(get_current_user)) -> UserDetailResponse:
+    logger.info("Getting information about yourself.")
+    return UserDetailResponse.model_validate(user.__dict__)

@@ -1,30 +1,43 @@
-import logging
-from logging import Logger
-import os
-import sys
-from dotenv import load_dotenv
+from typing import List
+from pydantic import computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+import pathlib
 
-from utils.get_app_url import get_app_url
-
-load_dotenv()
-
-APP_URL: str = get_app_url()
-
-HOST: str = "0.0.0.0"
-PORT: int = 8000
-
-DATABASE_URL: str = os.getenv("DATABASE_URL")
-REDIS_URL: str = os.getenv("REDIS_URL")
+class Settings(BaseSettings):
+    app_host: str
+    app_port: int
     
-SECRET_KEY: str = os.getenv("SECRET_KEY")
-
-AUTH0_DOMAIN: str = os.getenv("AUTH0_DOMAIN")
-AUTH0_AUDIENCE: str = os.getenv("AUTH0_AUDIENCE")
-CLIENT_SECRET: str = os.getenv("CLIENT_SECRET")
-CLIENT_ID: str = os.getenv("CLIENT_ID")
-ALGORITHMS: str = ["RS256"]
-
-logger: Logger = logging.getLogger("uvicorn")
-logger.setLevel(logging.INFO)
-handler = logging.StreamHandler(sys.stdout)
-logger.addHandler(handler)
+    secret_key: str
+    jwt_algorithm: str
+    
+    auth0_app_host: str
+    auth0_domain: str
+    auth0_audience: str
+    client_id: str
+    client_secret: str
+    
+    redis_host: str
+    redis_port: int
+    
+    @computed_field
+    @property
+    def redis_url(self) -> str:
+        return (f"redis://{self.redis_host}:{self.redis_port}")
+    
+    postgres_user: str
+    postgres_password: str
+    postgres_db: str
+    postgres_host: str
+    postgres_port: int
+    
+    @computed_field
+    @property
+    def database_url(self) -> str:
+        return (f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@"
+                f"{self.postgres_host}:{self.postgres_port}/{self.postgres_db}")
+    
+    cors_origins: List[str]
+    
+    model_config = SettingsConfigDict(env_file=str(pathlib.Path(__file__).resolve().parents[2] / ".env"))
+    
+settings = Settings() 
