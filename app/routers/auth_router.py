@@ -1,18 +1,11 @@
-from urllib.parse import quote
 
-from core.settings import settings
 from core.logger import logger
-from db.models.user import User
 from db.schemas.TokenSchema import Token
 from db.schemas.UserSchema import UserSignIn
 from db.session import get_db
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException
 from services.auth import authenticate_user, create_access_token
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from utils.auth0.get_email_from_token import get_email_from_token
-from utils.auth0.get_tokens import get_tokens
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
