@@ -1,7 +1,7 @@
 from urllib.parse import quote
 
-from core.settings import (APP_URL, AUTH0_AUDIENCE, AUTH0_DOMAIN, CLIENT_ID,
-                           logger)
+from core.settings import settings
+from core.logger import logger
 from db.models.user import User
 from db.schemas.TokenSchema import Token
 from db.schemas.UserSchema import UserSignIn
@@ -38,11 +38,11 @@ async def login_for_access_token_Auth0():
     # This function redirects to callback with code
     logger.info("Auth0 token Login.")
     auth_url = (
-        f"https://{AUTH0_DOMAIN}/authorize"
+        f"https://{settings.auth0_domain}/authorize"
         f"?response_type=code"
-        f"&client_id={CLIENT_ID}"
-        f"&redirect_uri={APP_URL}/auth/callback"
-        f"&audience={AUTH0_AUDIENCE}"
+        f"&client_id={settings.client_id}"
+        f"&redirect_uri={settings.auth0_domain}/auth/callback"
+        f"&audience={settings.auth0_audience}"
     )
     return RedirectResponse(auth_url)
 
@@ -79,6 +79,6 @@ async def callback(request: Request, db: AsyncSession = Depends(get_db)) -> dict
 @router.get("/logout/auth0")
 async def logout():
     logger.info("Auth0 Logout")
-    return_to = quote(f"{APP_URL}/docs", safe='')
-    logout_url = f"https://{AUTH0_DOMAIN}/v2/logout?client_id={CLIENT_ID}&returnTo={return_to}"
+    return_to = quote(f"{settings.auth0_domain}/docs", safe='')
+    logout_url = f"https://{settings.auth0_domain}/v2/logout?client_id={settings.client_id}&returnTo={return_to}"
     return RedirectResponse(logout_url)

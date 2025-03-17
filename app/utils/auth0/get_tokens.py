@@ -1,6 +1,6 @@
 import requests
-from core.settings import (APP_URL, AUTH0_DOMAIN, CLIENT_ID, CLIENT_SECRET,
-                           logger)
+from core.logger import logger
+from core.settings import settings
 from fastapi import HTTPException
 
 
@@ -9,13 +9,13 @@ def get_tokens(code: str) -> dict:
     logger.info("Getting tokens from Auth0.")
     token_data = {
         "grant_type": "authorization_code",
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
+        "client_id": settings.client_id,
+        "client_secret": settings.client_secret,
         "code": code,
-        "redirect_uri": f"{APP_URL}/auth/callback"
+        "redirect_uri": f"{settings.auth0_domain}/auth/callback"
     }
 
-    response = requests.post(f"https://{AUTH0_DOMAIN}/oauth/token", json=token_data)
+    response = requests.post(f"https://{settings.auth0_domain}/oauth/token", json=token_data)
     
     if response.status_code != 200:
         logger.info("Getting tokens from Auth0 error: failed to fetch token.")

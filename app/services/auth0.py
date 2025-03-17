@@ -1,5 +1,4 @@
-import jwt
-from core.settings import logger
+from core.logger import logger
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt

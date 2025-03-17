@@ -1,4 +1,5 @@
-from core.settings import ALGORITHMS, AUTH0_AUDIENCE, AUTH0_DOMAIN, logger
+from core.logger import logger
+from core.settings import settings
 from fastapi import HTTPException
 from jose import jwt
 
@@ -8,9 +9,9 @@ def get_token_payload(token: str, rsa_key: dict) -> dict:
     try:
         payload = jwt.decode(token,
             rsa_key,
-            algorithms=ALGORITHMS,
-            audience=AUTH0_AUDIENCE,
-            issuer=f"https://{AUTH0_DOMAIN}/")
+            algorithms="HS256",
+            audience=settings.auth0_audience,
+            issuer=f"https://{settings.auth0_domain}/")
         if payload is None:
             logger.error("Getting token payload from Auth0 error: invalid token.")
             raise HTTPException(status_code=401, detail="Invalid token")

@@ -1,4 +1,4 @@
-from core.settings import logger
+from core.logger import logger
 from jose import jwt
 
 

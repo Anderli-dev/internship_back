@@ -1,4 +1,4 @@
-from core.settings import logger
+from core.logger import logger
 from fastapi import HTTPException
 from utils.auth0.get_jwks import get_jwks
 from utils.auth0.get_rsa_key import get_rsa_key

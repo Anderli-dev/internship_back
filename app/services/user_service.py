@@ -1,6 +1,7 @@
 import asyncio
 import jwt
-from core.settings import SECRET_KEY, logger
+from core.logger import logger
+from core.settings import settings
 from db.models import User
 from db.schemas.UserSchema import UserBase, UserSignUp, UserUpdate
 from fastapi import HTTPException
@@ -86,7 +87,7 @@ async def token_get_me(token: str, db: AsyncSession) -> User:
     logger.debug("Getting user by token")
     try:
         loop = asyncio.get_running_loop()
-        decoded_jwt = await loop.run_in_executor(None, jwt.decode, token, SECRET_KEY, ALGORITHM)
+        decoded_jwt = await loop.run_in_executor(None, jwt.decode, token, settings.secret_key, ALGORITHM)
         
         user_email = decoded_jwt.get("user_email")
         if user_email is None:

@@ -1,4 +1,4 @@
-from core.settings import logger
+from core.logger import logger
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException
 from services import db_service

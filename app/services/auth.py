@@ -2,11 +2,11 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Optional
 
-import jwt
-from core.settings import SECRET_KEY, logger
+from jose import jwt
+from core.settings import settings
+from core.logger import logger
 from db.models import User
 from fastapi import HTTPException
-from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from utils.hash_password import verify_password
@@ -33,7 +33,7 @@ async def create_access_token(data: dict, expires_delta: Optional[timedelta] = N
     to_encode.update({"exp": expire})
     
     loop = asyncio.get_running_loop()
-    encoded_jwt = await loop.run_in_executor(None, jwt.encode, to_encode, SECRET_KEY, ALGORITHM)
+    encoded_jwt = await loop.run_in_executor(None, jwt.encode, to_encode, settings.secret_key, ALGORITHM)
     
     logger.info("Token creation success.")
     return encoded_jwt
