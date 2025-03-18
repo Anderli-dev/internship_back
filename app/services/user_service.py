@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 
-async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10):
+async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10) -> list[UserBase]:
     logger.debug("Getting all users")
     users = await db.execute(select(User).offset(skip).limit(limit))
     users = users.scalars().all()
