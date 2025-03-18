@@ -75,46 +75,47 @@ async def update_user_data(user_id: int, user_data: UserUpdate, db: AsyncSession
     
     return user
 
-async def user_delete_service(user_id: int, payload: dict, db: AsyncSession):
-    if "user_email" not in payload:
-        logger.error("User email missing from payload.")
-        raise HTTPException(status_code=400, detail="Invalid authentication payload.")
-    
-    user = await get_me_user(payload["user_email"], db)
-    
-    if user_id != user.id:
-        logger.warning(f"Unauthorized delete attempt by user {user.id} for user ID: {user_id}")
-        raise HTTPException(status_code=403, detail="Permission denied.")
-    
-    if "sub" in payload:
-        await auth0_user_delete(payload)
+class UserDeleteService:
+    async def delete_user(self, user_id: int, payload: dict, db: AsyncSession):
+        if "user_email" not in payload:
+            logger.error("User email missing from payload.")
+            raise HTTPException(status_code=400, detail="Invalid authentication payload.")
         
-    return await user_delete(user_id, db)
+        user = await get_me_user(payload["user_email"], db)
+        
+        if user_id != user.id:
+            logger.warning(f"Unauthorized delete attempt by user {user.id} for user ID: {user_id}")
+            raise HTTPException(status_code=403, detail="Permission denied.")
+        
+        if "sub" in payload:
+            await self.delete_auth0_user(payload)
+            
+        return await self.delete_user_from_db(user_id, db)
     
-async def user_delete(user_id: int, db: AsyncSession) -> dict:
-    logger.debug("Deleting user")
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalars().first()
+    async def delete_user_from_db(self, user_id: int, db: AsyncSession):
+        logger.debug("Deleting user")
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalars().first()
 
-    if not user:
-        logger.error("User not found!")
-        raise HTTPException(status_code=404, detail="User not found!")
+        if not user:
+            logger.error("User not found!")
+            raise HTTPException(status_code=404, detail="User not found!")
 
-    logger.debug("Deleting user in db")
-    await db.delete(user)
-    await db.commit()
+        logger.debug("Deleting user in db")
+        await db.delete(user)
+        await db.commit()
 
-    return {"message": "User deleted successfully"}
-
-async def auth0_user_delete(payload: dict) -> dict:
-    token = await get_management_token()
+        return {"message": "User deleted successfully"}
     
-    url = f'https://{settings.auth0_domain}/api/v2/users/{payload["sub"]}'
-    headers = {'Authorization': f'Bearer {token}'}
+    async def delete_auth0_user(self, payload: dict):
+        token = await get_management_token()
+        
+        url = f'https://{settings.auth0_domain}/api/v2/users/{payload["sub"]}'
+        headers = {'Authorization': f'Bearer {token}'}
 
-    response: Response = requests.delete(url, headers=headers)
-    
-    if response.status_code != 204:
-        logger.error(f"Auth0 deletion failed: {response.content}")
-        detail = response.json().get("message", "Error deleting user from authentication provider.")
-        raise HTTPException(status_code=response.status_code, detail=detail)
+        response: Response = requests.delete(url, headers=headers)
+        
+        if response.status_code != 204:
+            logger.error(f"Auth0 deletion failed: {response.content}")
+            detail = response.json().get("message", "Error deleting user from authentication provider.")
+            raise HTTPException(status_code=response.status_code, detail=detail)

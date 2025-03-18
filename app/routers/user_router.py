@@ -9,7 +9,7 @@ from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException, Response
 from services.auth import Auth
-from services.user_service import (auth0_user_delete, create_new_user, get_me_user, get_users, read_user,
+from services.user_service import (UserDeleteService, auth0_user_delete, create_new_user, get_me_user, get_users, read_user,
                                    update_user_data, user_delete, user_delete_service)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -68,9 +68,9 @@ async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = De
 @router.delete("/{user_id}")
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)) -> dict:
     logger.info(f"Request to delete user ID: {user_id}")
+    service = UserDeleteService()
     
-    return await user_delete_service(user_id, payload, db)
-    
+    return await service.delete_user(user_id, payload, db)
 
 @router.get("/me/", response_model=UserDetailResponse)
 async def get_me(db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)) -> UserDetailResponse:
