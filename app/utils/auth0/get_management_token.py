@@ -9,7 +9,7 @@ async def get_management_token():
     data = {
         'client_id': settings.client_id,
         'client_secret': settings.client_secret,
-        'audience': settings.auth0_domain,
+        'audience': f"{settings.auth0_domain}/api/v2/",
         'grant_type': 'client_credentials'
     }
     response = requests.post(f"https://{settings.auth0_domain}/oauth/token", json=data, headers=headers)

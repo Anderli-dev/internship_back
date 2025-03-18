@@ -9,8 +9,8 @@ from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException, Response
 from services.auth import Auth
-from services.user_service import (create_new_user, get_me_user, get_users, read_user,
-                                   update_user_data, user_delete)
+from services.user_service import (auth0_user_delete, create_new_user, get_me_user, get_users, read_user,
+                                   update_user_data, user_delete, user_delete_service)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from utils.auth0.get_management_token import get_management_token
@@ -67,30 +67,9 @@ async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = De
 
 @router.delete("/{user_id}")
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)) -> dict:
-    logger.info("Deleting user")
+    logger.info(f"Request to delete user ID: {user_id}")
     
-    print(payload)
-    user = await get_me_user(payload["user_email"], db)
-    
-    if user_id == user.id:
-        token = await get_management_token()
-        auth0_user_id = str(payload["sub"]).split("|")[1]
-        print(auth0_user_id)
-        
-        url = f'https://{settings.auth0_domain}/api/v2/users/{auth0_user_id}'
-        headers = {'Authorization': f'Bearer {token}'}
-        data = {
-                'audience': settings.auth0_domain,
-            }
-        response = requests.delete(url, headers=headers, data=data)
-        
-        if response.status_code == 204:
-            print("User deleted successfully")
-        else:
-            print(response.content)
-            raise HTTPException(status_code=401, detail="User deleted error",)
-    
-    return await user_delete(user_id, db)
+    return await user_delete_service(user_id, payload, db)
     
 
 @router.get("/me/", response_model=UserDetailResponse)

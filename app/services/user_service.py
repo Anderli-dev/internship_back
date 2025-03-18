@@ -1,12 +1,13 @@
+import requests
 from core.logger import logger
+from core.settings import settings
 from db.models import User
-from db.schemas.UserSchema import (UserBase, UserSignUp,
-                                   UserUpdate)
-from fastapi import HTTPException
+from db.schemas.UserSchema import UserBase, UserSignUp, UserUpdate
+from fastapi import HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from utils.auth0.get_management_token import get_management_token
 from utils.hash_password import hash_password
-
 
 
 async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10) -> list[UserBase]:
@@ -73,6 +74,22 @@ async def update_user_data(user_id: int, user_data: UserUpdate, db: AsyncSession
     await db.refresh(user)
     
     return user
+
+async def user_delete_service(user_id: int, payload: dict, db: AsyncSession):
+    if "user_email" not in payload:
+        logger.error("User email missing from payload.")
+        raise HTTPException(status_code=400, detail="Invalid authentication payload.")
+    
+    user = await get_me_user(payload["user_email"], db)
+    
+    if user_id != user.id:
+        logger.warning(f"Unauthorized delete attempt by user {user.id} for user ID: {user_id}")
+        raise HTTPException(status_code=403, detail="Permission denied.")
+    
+    if "sub" in payload:
+        await auth0_user_delete(payload)
+        
+    return await user_delete(user_id, db)
     
 async def user_delete(user_id: int, db: AsyncSession) -> dict:
     logger.debug("Deleting user")
@@ -88,3 +105,16 @@ async def user_delete(user_id: int, db: AsyncSession) -> dict:
     await db.commit()
 
     return {"message": "User deleted successfully"}
+
+async def auth0_user_delete(payload: dict) -> dict:
+    token = await get_management_token()
+    
+    url = f'https://{settings.auth0_domain}/api/v2/users/{payload["sub"]}'
+    headers = {'Authorization': f'Bearer {token}'}
+
+    response: Response = requests.delete(url, headers=headers)
+    
+    if response.status_code != 204:
+        logger.error(f"Auth0 deletion failed: {response.content}")
+        detail = response.json().get("message", "Error deleting user from authentication provider.")
+        raise HTTPException(status_code=response.status_code, detail=detail)
