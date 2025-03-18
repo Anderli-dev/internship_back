@@ -8,7 +8,9 @@ class Settings(BaseSettings):
     app_port: int
     
     secret_key: str
+    
     jwt_algorithm: str
+    auth0_algorithm: str
     
     auth0_app_host: str
     auth0_domain: str

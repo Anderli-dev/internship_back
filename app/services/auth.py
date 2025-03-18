@@ -1,11 +1,16 @@
 import asyncio
+import functools
 from datetime import datetime, timedelta
 from typing import Optional
 
+from utils.auth0.get_jwks import get_jwks
+from utils.auth0.get_rsa_key import get_rsa_key
+from utils.auth0.get_token_payload import get_token_payload
 from core.logger import logger
 from core.settings import settings
 from db.models import User
-from fastapi import HTTPException, Security, security
+from db.session import get_db
+from fastapi import Depends, HTTPException, Security, security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import exceptions, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,41 +37,60 @@ async def create_access_token(data: dict, expires_delta: Optional[timedelta] = N
     expire = datetime.now() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     
-    loop = asyncio.get_running_loop()
-    encoded_jwt = await loop.run_in_executor(None, jwt.encode, to_encode, settings.secret_key, settings.jwt_algorithm)
+    print(settings.jwt_algorithm)
+    print(settings.secret_key)
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, settings.jwt_algorithm)
     
     logger.info("Token creation success.")
     return encoded_jwt
 
-security = HTTPBearer()
-
-async def verify_jwt(db: AsyncSession, credentials: HTTPAuthorizationCredentials = Security(security)) -> User:
-    logger.debug("Getting user by token")
-    try:
-        token = credentials.credentials
-        
-        loop = asyncio.get_running_loop()
-        decoded_jwt = await loop.run_in_executor(None, jwt.decode, token, settings.secret_key, settings.jwt_algorithm)
-        
-        user_email = decoded_jwt.get("user_email")
-        if user_email is None:
+def token_exception_wraper(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except exceptions.ExpiredSignatureError:
+            logger.error("Token expired!")
+            raise HTTPException(status_code=401, detail="Token expired!")
+        except exceptions.JWEInvalidAuth:
             logger.error("Invalid token!")
             raise HTTPException(status_code=401, detail="Invalid token!")
+        except exceptions.JWTError:
+            logger.error("Auth0 invalid token.")
+            raise HTTPException(status_code=401, detail="Invalid token")
+        except Exception as e:
+            logger.error(f"Token error: {e}")
+            raise HTTPException(status_code=401, detail="Token error!")
+    return wrapper
+
+
+class Auth:
+    security = HTTPBearer()
+    
+    async def get_token_payload(self, credentials: HTTPAuthorizationCredentials = Security(security)):
+        token = credentials.credentials
         
-        user = await db.execute(select(User).filter(User.email == decoded_jwt.get("user_email")))
-        user = user.scalars().first()
+        try:
+            return await self.get_auth0_jwt_token(token)
+        except KeyError:
+            return await self.get_jwt_token(token)
         
-        if not user:
-            logger.error("User not found!")
-            raise HTTPException(status_code=404, detail="User not found!")
+    @token_exception_wraper
+    async def get_jwt_token(self, token: str):
+        token_data = jwt.decode(token, settings.secret_key, settings.jwt_algorithm)
+        return token_data
+    
+    @token_exception_wraper
+    async def get_auth0_jwt_token(self, token: str):
+        jwks = get_jwks()
         
-        return user
-    except exceptions.ExpiredSignatureError:
-        logger.error("Token expired!")
-        raise HTTPException(status_code=401, detail="Token expired!")
-    except exceptions.JWEInvalidAuth:
-        logger.error("Invalid token!")
-        raise HTTPException(status_code=401, detail="Invalid token!")
-    except Exception as e:
-        logger.error(f"Token error: {e}")
-        raise HTTPException(status_code=401, detail="Token error!")
+        rsa_key = get_rsa_key(jwks, token)
+
+        if not rsa_key:
+            logger.error("Auth0 token invalid JWT Key.")
+            raise HTTPException(status_code=401, detail="Invalid JWT Key")
+
+        token_data = get_token_payload(token, rsa_key)
+        
+        return token_data
+    

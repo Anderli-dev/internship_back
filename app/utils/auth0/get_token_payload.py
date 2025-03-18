@@ -10,7 +10,7 @@ def get_token_payload(token: str, rsa_key: dict) -> dict:
     try:
         payload = jwt.decode(token,
             rsa_key,
-            algorithms=settings.jwt_algorithm,
+            algorithms=settings.auth0_algorithm,
             audience=settings.auth0_audience,
             issuer=f"https://{settings.auth0_domain}/")
         if payload is None:

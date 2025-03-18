@@ -17,9 +17,9 @@ async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10) -> list[Us
     
     return users
 
-async def read_user(user_id: int, db: AsyncSession) -> User:
+async def get_user_by_field(db: AsyncSession, field: str, value) -> User:
     logger.debug("Getting user")
-    user = await db.execute(select(User).filter(User.id == user_id))
+    user = await db.execute(select(User).filter(getattr(User, field) == value))
     user = user.scalars().first()
     
     if not user:
@@ -27,6 +27,12 @@ async def read_user(user_id: int, db: AsyncSession) -> User:
         raise HTTPException(status_code=404, detail="User not found!")
     
     return user
+
+async def get_me_user(email: str, db: AsyncSession) -> User:
+    return await get_user_by_field(db, "email", email)
+
+async def read_user(user_id: int, db: AsyncSession) -> User:
+    return await get_user_by_field(db, "id", user_id)
 
 async def create_new_user(user: UserSignUp, db: AsyncSession) -> User:
     logger.debug("Checking if user exists")
