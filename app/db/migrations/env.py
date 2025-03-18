@@ -1,7 +1,8 @@
 import asyncio
 import os
 from logging.config import fileConfig
-from app.core.settings import logger
+from core.logger import logger
+from app.core.settings import settings
 
 from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -20,14 +21,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Retrieve the database URL from environment variables
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-# Replace with localhost since migrations are performed locally
-# DATABASE_URL = DATABASE_URL.replace("postgres:", "localhost:")
-
 # Set the database URL in the Alembic configuration
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
 # Set metadata for Alembic
 target_metadata = BaseModel.metadata
@@ -37,7 +32,7 @@ def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (without connecting to the database)."""
     logger.info(f"Runing offline migrations.")
     context.configure(
-        url=DATABASE_URL,
+        url=settings.database_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -50,7 +45,7 @@ def run_migrations_offline() -> None:
 async def run_migrations_online() -> None:
     """Run migrations in 'online' mode (with a database connection)."""
     logger.info(f"Runing online migrations.")
-    engine = create_async_engine(DATABASE_URL, pool_pre_ping=True)
+    engine = create_async_engine(settings.database_url, pool_pre_ping=True)
 
     async with engine.connect() as connection:
         await connection.run_sync(do_run_migrations)

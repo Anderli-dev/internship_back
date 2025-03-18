@@ -1,4 +1,4 @@
-from core.settings import logger
+from core.logger import logger
 from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
 from db.session import get_db

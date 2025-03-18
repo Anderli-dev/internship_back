@@ -1,4 +1,4 @@
-from core.settings import logger
+from core.logger import logger
 from db.models import User
 from db.schemas.UserSchema import UserBase, UserSignUp, UserUpdate
 from fastapi import HTTPException

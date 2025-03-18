@@ -38,7 +38,7 @@ Make sure you have the following installed:
 docker-compose up --build
 ```
 3. The application doc will be available at:
-- [http://127.0.0.1:8000](http://127.0.0.1:8000/docs)
+- [http://127.0.0.1:8000](http://127.0.0.1:8000)
 - OpenAPI documentation: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
 ## Database Migrations with Alembic

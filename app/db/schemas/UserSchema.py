@@ -1,7 +1,6 @@
 from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
-
 class UserBase(BaseModel):
     username: str | None
     email: EmailStr
