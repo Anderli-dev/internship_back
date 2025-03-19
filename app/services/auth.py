@@ -1,20 +1,18 @@
-import asyncio
-import functools
 from datetime import datetime, timedelta
 from typing import Optional
 
-from utils.auth0.get_jwks import get_jwks
-from utils.auth0.get_rsa_key import get_rsa_key
-from utils.auth0.get_token_payload import get_token_payload
 from core.logger import logger
 from core.settings import settings
 from db.models import User
-from db.session import get_db
-from fastapi import Depends, HTTPException, Security, security
+from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import exceptions, jwt
+from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from utils.auth0.get_jwks import get_jwks
+from utils.auth0.get_rsa_key import get_rsa_key
+from utils.auth0.get_token_payload import get_token_payload
+from utils.decorators.token_exception_check import token_exception_check
 from utils.hash_password import verify_password
 
 ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
@@ -42,26 +40,6 @@ async def create_access_token(data: dict, expires_delta: Optional[timedelta] = N
     logger.info("Token creation success.")
     return encoded_jwt
 
-def token_exception_wraper(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except exceptions.ExpiredSignatureError:
-            logger.error("Token expired!")
-            raise HTTPException(status_code=401, detail="Token expired!")
-        except exceptions.JWEInvalidAuth:
-            logger.error("Invalid token!")
-            raise HTTPException(status_code=401, detail="Invalid token!")
-        except exceptions.JWTError:
-            logger.error("Auth0 invalid token.")
-            raise HTTPException(status_code=401, detail="Invalid token")
-        except Exception as e:
-            logger.error(f"Token error: {e}")
-            raise HTTPException(status_code=401, detail="Token error!")
-    return wrapper
-
-
 class Auth:
     security = HTTPBearer()
     
@@ -73,12 +51,12 @@ class Auth:
         except KeyError:
             return await self.get_jwt_token(token)
         
-    @token_exception_wraper
+    @token_exception_check
     async def get_jwt_token(self, token: str):
         token_data = jwt.decode(token, settings.secret_key, settings.jwt_algorithm)
         return token_data
     
-    @token_exception_wraper
+    @token_exception_check
     async def get_auth0_jwt_token(self, token: str):
         jwks = get_jwks()
         

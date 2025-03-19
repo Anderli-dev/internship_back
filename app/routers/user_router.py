@@ -1,10 +1,12 @@
+from services.user_services.delete import UserDeleteService
+from services.user_services.update import UserUpdateService
 from core.logger import logger
 from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
 from db.session import get_db
 from fastapi import APIRouter, Depends, Response
 from services.auth import Auth
-from services.user_service import (UserDeleteService, UserUpdateService, create_new_user, get_me_user, get_users, read_user)
+from services.user_service import (UserUpdateService, create_new_user, get_me_user, get_users, read_user)
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.hash_password import hash_password
 
