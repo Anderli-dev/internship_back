@@ -1,20 +1,11 @@
-import requests
-from utils.auth0.get_jwks import get_jwks
-from utils.auth0.get_rsa_key import get_rsa_key
 from core.logger import logger
-from core.settings import settings
-from db.models.user import User
 from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
 from db.session import get_db
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, Response
 from services.auth import Auth
-from services.user_service import (UserDeleteService, auth0_user_delete, create_new_user, get_me_user, get_users, read_user,
-                                   update_user_data, user_delete, user_delete_service)
+from services.user_service import (UserDeleteService, UserUpdateService, create_new_user, get_me_user, get_users, read_user)
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from utils.auth0.get_management_token import get_management_token
-from utils.auth0.get_token_payload import get_token_payload
 from utils.hash_password import hash_password
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -48,6 +39,7 @@ async def create_user(user: UserSignUp, db: AsyncSession = Depends(get_db)) -> U
 @router.get("/{user_id}", response_model=UserDetailResponse)
 async def get_user(user_id: int, db: AsyncSession = Depends(get_db)) -> UserDetailResponse:
     logger.info("Getting user info.")
+    
     user = await read_user(user_id, db)
     
     logger.info("Getting user successful")
@@ -56,18 +48,16 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db)) -> UserDeta
 @router.put("/{user_id}", response_model=UserDetailResponse)
 async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)) -> UserDetailResponse:
     logger.info("Updating user.")
-    user = await get_me_user(payload["user_email"], db)
-    if user_id == user.id:
-        user = await update_user_data(user_id, user_data.model_dump(exclude_unset=True), db) # user_data.model_dump(exclude_unset=True) for geting not None fields
-    else:
-        raise HTTPException(status_code=401, detail="Incorrect user id!",)
     
-    logger.info("Updating user successful.")
+    service = UserUpdateService()
+    user = await service.update_user(user_id, payload, db, user_data)
+    
     return UserDetailResponse.model_validate(user.__dict__)
 
 @router.delete("/{user_id}")
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)) -> dict:
     logger.info(f"Request to delete user ID: {user_id}")
+    
     service = UserDeleteService()
     
     return await service.delete_user(user_id, payload, db)
