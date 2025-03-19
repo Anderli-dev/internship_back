@@ -1,12 +1,13 @@
-from services.user_services.delete import UserDeleteService
-from services.user_services.update import UserUpdateService
 from core.logger import logger
 from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
 from db.session import get_db
 from fastapi import APIRouter, Depends, Response
 from services.auth import Auth
-from services.user_service import (UserUpdateService, create_new_user, get_me_user, get_users, read_user)
+from services.user_services.create import UserCreateService
+from services.user_services.delete import UserDeleteService
+from services.user_services.read import UserReadService
+from services.user_services.update import UserUpdateService
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.hash_password import hash_password
 
@@ -15,7 +16,8 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get("/", response_model=UsersListResponse)
 async def get_all_users(db: AsyncSession = Depends(get_db)) -> UsersListResponse:
     logger.info("Getting all users.")
-    users = await get_users(db)
+    
+    users = await UserReadService.get_all_users(db)
     total = len(users)
     
     if not users:
@@ -28,8 +30,9 @@ async def get_all_users(db: AsyncSession = Depends(get_db)) -> UsersListResponse
 @router.post("/")
 async def create_user(user: UserSignUp, db: AsyncSession = Depends(get_db)) -> UserSignUp:
     logger.info("Creating user.")
+    
     user.password = hash_password(user.password)
-    user = await create_new_user(user, db)
+    user = await UserCreateService.create_user(user, db)
     
     if user is None:
         logger.error("User creation failed!")
@@ -42,30 +45,34 @@ async def create_user(user: UserSignUp, db: AsyncSession = Depends(get_db)) -> U
 async def get_user(user_id: int, db: AsyncSession = Depends(get_db)) -> UserDetailResponse:
     logger.info("Getting user info.")
     
-    user = await read_user(user_id, db)
+    service = UserReadService()
+    user = await service.read_user_from_db(db, user_id)
     
     logger.info("Getting user successful")
     return UserDetailResponse.model_validate(user.__dict__)
 
 @router.put("/{user_id}", response_model=UserDetailResponse)
-async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)) -> UserDetailResponse:
+async def update_user(user_data: UserUpdate, db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)) -> UserDetailResponse:
     logger.info("Updating user.")
     
     service = UserUpdateService()
-    user = await service.update_user(user_id, payload, db, user_data)
+    user = await service.update_user(db, user_data, payload=payload)
     
     return UserDetailResponse.model_validate(user.__dict__)
 
 @router.delete("/{user_id}")
-async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)) -> dict:
-    logger.info(f"Request to delete user ID: {user_id}")
+async def delete_user(db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)) -> dict:
+    logger.info(f"Request to delete user")
     
     service = UserDeleteService()
     
-    return await service.delete_user(user_id, payload, db)
+    return await service.delete_user(db, payload=payload)
 
 @router.get("/me/", response_model=UserDetailResponse)
 async def get_me(db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)) -> UserDetailResponse:
-    logger.info("Getting information about yourself.")
-    user = await get_me_user(payload["user_email"], db)
+    logger.info("Getting information about me.")
+    
+    service = UserReadService()
+    user = await service.read_auth_user(db, payload=payload)
+    
     return UserDetailResponse.model_validate(user.__dict__)

@@ -15,11 +15,7 @@ async def login_for_access_token(user_data: UserSignIn, db: AsyncSession = Depen
     
     if not user:
         logger.error("User incorrect username or password!")
-        raise HTTPException(
-            status_code=401,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
         
     access_token = await create_access_token(data={"user_email": user.email})
     logger.info("Own token Login success!")

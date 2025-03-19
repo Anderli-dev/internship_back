@@ -11,14 +11,15 @@ from utils.hash_password import hash_password
 
 
 class UserUpdateService:
-    @user_action_error_check(optional_user=True)
-    async def update_user(self, user_id: int, payload: dict, db: AsyncSession, user_data: UserUpdate, user: User):
+    @user_action_error_check(secur=True)
+    async def update_user(self, db: AsyncSession, user_data: UserUpdate, payload: dict, user: User):
         if "sub" in payload:
             await self.update_auth0_user(payload, user_data)
             
         return await self.update_user_from_db(db, user, user_data)
     
-    async def update_user_from_db(self, db: AsyncSession, user: User, user_data: UserUpdate):
+    @staticmethod
+    async def update_user_from_db(db: AsyncSession, user: User, user_data: UserUpdate):
         logger.debug("Setting up user data")
         # Updating not None fields
         for key, data in user_data.model_dump(exclude_unset=True).items():
@@ -34,7 +35,8 @@ class UserUpdateService:
         logger.info("Updating user successful.")
         return user
     
-    async def update_auth0_user(self, payload: dict, user_data: UserUpdate):
+    @staticmethod
+    async def update_auth0_user(payload: dict, user_data: UserUpdate):
         token = await get_management_token()
         
         url = f'https://{settings.auth0_domain}/api/v2/users/{payload["sub"]}'
