@@ -7,11 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 class CompanyCreateService:
     @staticmethod
-    async def create_company( db: AsyncSession, company: CompanyCreate, user_id: int) -> Company:
+    async def create_company(db: AsyncSession, company: CompanyCreate, user_id: int) -> Company:
         logger.debug("Creating company")
         company = Company(name=company.name, description=company.description, owner_id=user_id)
         
-        logger.debug("Adding user to db")
+        logger.debug("Adding company to db")
         db.add(company)
         await db.commit()
         await db.refresh(company)
