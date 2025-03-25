@@ -21,4 +21,3 @@ class Company(BaseModel):
     visibility = Column(SAEnum(VisibilityEnum), default=VisibilityEnum.hidden, nullable=False)
     
     owner = relationship("User", back_populates="company")
-    

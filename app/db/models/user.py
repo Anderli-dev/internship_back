@@ -20,6 +20,4 @@ class User(BaseModel):
     username = Column(String, unique=True, nullable=True)
     email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=True)
-
-    company = relationship("Company", back_populates="owner")
-    role = Column(SAEnum(RoleEnum), default=RoleEnum.viewer, nullable=False)
+    
