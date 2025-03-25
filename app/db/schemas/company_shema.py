@@ -6,7 +6,6 @@ class CompanyResponse(BaseModel):
     id: int
     name: str
     description: Optional[str]
-    owner_id: int
     visibility: VisibilityEnum
     
 class CompanyCreate(BaseModel):

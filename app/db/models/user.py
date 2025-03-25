@@ -1,17 +1,6 @@
-from enum import Enum
-
 from db.base import BaseModel
 from sqlalchemy import Column
-from sqlalchemy import Enum as SAEnum
 from sqlalchemy import Integer, String
-from sqlalchemy.orm import relationship
-
-
-class RoleEnum(Enum):
-    owner = "owner"
-    admin = "admin"
-    member = "member"
-    viewer = "viewer"
 
 class User(BaseModel):
     __tablename__ = "users"

@@ -1,5 +1,5 @@
+from db.models.company_user_role import RoleEnum
 from db.models.company import Company
-from db.models.user import RoleEnum
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select

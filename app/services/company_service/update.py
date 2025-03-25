@@ -1,6 +1,6 @@
+from db.models.company_user_role import RoleEnum
 from core.logger import logger
 from db.models.company import Company
-from db.models.user import RoleEnum
 from db.schemas.company_shema import CompanyUpdate
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession

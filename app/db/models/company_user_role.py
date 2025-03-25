@@ -1,9 +1,17 @@
-from db.base import BaseModel
-from db.models.user import RoleEnum
+from enum import Enum
+
 from sqlalchemy import Column
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, Integer
 
+from db.base import BaseModel
+
+
+class RoleEnum(Enum):
+    owner = "owner"
+    admin = "admin"
+    member = "member"
+    viewer = "viewer"
 
 class CompanyUserRole(BaseModel):
     __tablename__ = "company_user_roles"

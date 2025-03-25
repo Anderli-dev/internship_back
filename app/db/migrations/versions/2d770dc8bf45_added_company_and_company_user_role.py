@@ -1,8 +1,8 @@
 """added company and company user role
 
-Revision ID: d31aa10bf9c1
+Revision ID: 2d770dc8bf45
 Revises: 8e44c761d16b
-Create Date: 2025-03-25 06:47:47.419372
+Create Date: 2025-03-25 07:14:40.691775
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'd31aa10bf9c1'
+revision: str = '2d770dc8bf45'
 down_revision: Union[str, None] = '8e44c761d16b'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,13 +24,10 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('description', sa.String(), nullable=True),
-    sa.Column('owner_id', sa.Integer(), nullable=False),
     sa.Column('visibility', sa.Enum('hidden', 'visible', name='visibilityenum'), nullable=False),
-    sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_companies_id'), 'companies', ['id'], unique=False)
-    op.create_index(op.f('ix_companies_name'), 'companies', ['name'], unique=True)
     op.create_table('company_user_roles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
