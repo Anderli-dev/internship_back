@@ -20,4 +20,4 @@ async def create_company_endpoint(company_data: CompanyCreate, db: AsyncSession 
 async def update_company_endpoint(company_id: int, company_data: CompanyUpdate, db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)):
     user: User = await UserReadService().read_auth_user(db, payload=payload)
     
-    return await CompanyUpdateService.update_company(db, company_id, company_data, user.id)
+    return await CompanyUpdateService.update_company(db, company_id, company_data, user_id=user.id)
