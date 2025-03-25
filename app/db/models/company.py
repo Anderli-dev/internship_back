@@ -1,6 +1,6 @@
 from enum import Enum
 
-from app.db.base import BaseModel
+from db.base import BaseModel
 from sqlalchemy import Column
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, Integer, String

@@ -2,7 +2,7 @@ import requests
 from core.logger import logger
 from core.settings import settings
 from db.models import User
-from db.schemas.UserSchema import UserUpdate
+from db.schemas.user_schema import UserUpdate
 from fastapi import HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.auth0.get_management_token import get_management_token

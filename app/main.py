@@ -1,7 +1,7 @@
 from core.settings import settings
 import uvicorn
 from fastapi import FastAPI
-from routers import db_router, user_router, auth_router, auth0_router
+from routers import db_router, user_router, auth_router, auth0_router, company_router
 from utils.cors import add_cors_middleware
 
 app = FastAPI()
@@ -10,6 +10,7 @@ add_cors_middleware(app)
 
 app.include_router(db_router.router)
 app.include_router(user_router.router)
+app.include_router(company_router.router)
 app.include_router(auth_router.router)
 app.include_router(auth0_router.router)
 

@@ -1,13 +1,13 @@
 from core.logger import logger
-from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
+from db.schemas.user_schema import (UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
 from db.session import get_db
 from fastapi import APIRouter, Depends, Response
 from services.auth import Auth
-from services.user_services.create import UserCreateService
-from services.user_services.delete import UserDeleteService
-from services.user_services.read import UserReadService
-from services.user_services.update import UserUpdateService
+from services.user_service.create import UserCreateService
+from services.user_service.delete import UserDeleteService
+from services.user_service.read import UserReadService
+from services.user_service.update import UserUpdateService
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.hash_password import hash_password
 
@@ -72,7 +72,6 @@ async def delete_user(db: AsyncSession = Depends(get_db), payload: dict = Depend
 async def get_me(db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)) -> UserDetailResponse:
     logger.info("Getting information about me.")
     
-    service = UserReadService()
-    user = await service.read_auth_user(db, payload=payload)
+    user = await UserReadService().read_auth_user(db, payload=payload)
     
     return UserDetailResponse.model_validate(user.__dict__)

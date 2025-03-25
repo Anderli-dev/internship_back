@@ -1,6 +1,6 @@
 from core.logger import logger
-from db.schemas.TokenSchema import Token
-from db.schemas.UserSchema import UserSignIn
+from db.schemas.token_schema import Token
+from db.schemas.user_schema import UserSignIn
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException
 from services.auth import authenticate_user, create_access_token

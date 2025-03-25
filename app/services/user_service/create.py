@@ -1,9 +1,10 @@
 from core.logger import logger
 from db.models import User
-from db.schemas.UserSchema import UserSignUp
+from db.schemas.user_schema import UserSignUp
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
 
 class UserCreateService:
     @staticmethod
