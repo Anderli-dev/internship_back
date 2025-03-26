@@ -16,6 +16,7 @@ class CompanyDeleteService:
         logger.info(f"Removing company-user role links for company ID {company_id}")
         await db.execute(delete(CompanyUserRole).where(CompanyUserRole.company_id == company_id))
 
+        # First remove dependencies and then remove the company itself
         logger.info(f"Fetching company with ID {company_id} from the database")
         company = await db.execute(select(Company).filter(Company.id == company_id))
         company: Company = company.scalars().first()

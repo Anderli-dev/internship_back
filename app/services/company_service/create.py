@@ -17,6 +17,7 @@ class CompanyCreateService:
         await db.refresh(new_company)
         logger.info(f"Company created with ID: {new_company.id}")
 
+        # After creating a company, adding a user with a role
         logger.info(f"Assigning role 'owner' to user ID {user_id} for company ID {new_company.id}")
         cur: CompanyUserRole = CompanyUserRole(user_id=user_id, company_id=new_company.id, role=RoleEnum.owner)
         db.add(cur)
