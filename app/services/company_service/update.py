@@ -15,7 +15,7 @@ class CompanyUpdateService:
         logger.info(f"User ID {user_id} initiated update for company ID {company_id}")
 
         company_result = await db.execute(select(Company).filter(Company.id == company_id))
-        company = company_result.scalars().first()
+        company: Company = company_result.scalars().first()
 
         if not company:
             logger.error(f"Company with ID {company_id} not found")

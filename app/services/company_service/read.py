@@ -14,10 +14,10 @@ class CompanyReadService:
         logger.info(f"Fetching companies from DB with skip={skip}, limit={limit}")
         
         companies = await db.execute(select(Company).offset(skip).limit(limit))
-        companies = companies.scalars().all()
+        companies: Company = companies.scalars().all()
         logger.info(f"Retrieved {len(companies)} companies from database")
 
-        companies = [CompanyResponse.model_validate(company.__dict__) for company in companies]
+        companies: list[Company] = [CompanyResponse.model_validate(company.__dict__) for company in companies]
         logger.info("Transformed raw company data to CompanyResponse schema list")
         
         return companies
@@ -27,7 +27,7 @@ class CompanyReadService:
         logger.info(f"Fetching company where {field} = {value}")
         
         company = await db.execute(select(Company).filter(getattr(Company, field) == value))
-        company = company.scalars().first()
+        company: Company = company.scalars().first()
         
         if not company:
             logger.error(f"Company not found with {field} = {value}")
@@ -39,7 +39,7 @@ class CompanyReadService:
     async def read_company_from_db(self, db: AsyncSession, company_id: int) -> Company:
         logger.info(f"Reading company with ID: {company_id}")
         
-        company = await self.get_company_by_field(db, "id", company_id)
+        company: Company = await self.get_company_by_field(db, "id", company_id)
         
         if not company:
             logger.error(f"Company with ID {company_id} not found")

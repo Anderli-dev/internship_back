@@ -10,7 +10,7 @@ from core.logger import logger
 class CompanyDeleteService:
     @staticmethod
     @check_user_role(role_enum=RoleEnum.owner)
-    async def delete_company(db: AsyncSession, company_id: int, user_id: int):
+    async def delete_company(db: AsyncSession, company_id: int, user_id: int) -> dict:
         logger.info(f"User ID {user_id} initiated deletion of company ID {company_id}")
 
         logger.info(f"Removing company-user role links for company ID {company_id}")
@@ -18,7 +18,7 @@ class CompanyDeleteService:
 
         logger.info(f"Fetching company with ID {company_id} from the database")
         company = await db.execute(select(Company).filter(Company.id == company_id))
-        company = company.scalars().first()
+        company: Company = company.scalars().first()
 
         if not company:
             logger.info(f"Company with ID {company_id} not found")

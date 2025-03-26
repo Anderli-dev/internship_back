@@ -3,7 +3,6 @@ import functools
 from core.logger import logger
 from db.models import User
 from db.models.company_user_role import CompanyUserRole, RoleEnum
-from db.models.user import User
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +23,7 @@ def check_user_role(role_enum: RoleEnum):
                 raise HTTPException(status_code=400, detail="Invalid user ID")
                 
             user = await db.execute(select(CompanyUserRole).filter(CompanyUserRole.user_id == kwargs["user_id"]))
-            user = user.scalars().first()
+            user: User = user.scalars().first()
             
             if not user:
                 logger.error("Company with user not found!")

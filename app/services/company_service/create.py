@@ -18,7 +18,7 @@ class CompanyCreateService:
         logger.info(f"Company created with ID: {new_company.id}")
 
         logger.info(f"Assigning role 'owner' to user ID {user_id} for company ID {new_company.id}")
-        cur = CompanyUserRole(user_id=user_id, company_id=new_company.id, role=RoleEnum.owner)
+        cur: CompanyUserRole = CompanyUserRole(user_id=user_id, company_id=new_company.id, role=RoleEnum.owner)
         db.add(cur)
         await db.commit()
         logger.info("User role assignment committed successfully")
