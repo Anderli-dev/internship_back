@@ -11,7 +11,7 @@ class UserReadService:
     @staticmethod
     async def get_all_users(db: AsyncSession, skip: int = 0, limit: int = 10) -> list[UserBase]:
         logger.debug("Getting all users")
-        print(type(db))
+
         users = await db.execute(select(User).offset(skip).limit(limit))
         users = users.scalars().all()
         users = [UserBase.model_validate(user.__dict__) for user in users] # Creating list of UserBase

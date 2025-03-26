@@ -1,16 +1,28 @@
 from db.models.user import User
-from db.schemas.company_shema import (CompanyCreate, CompanyResponse,
+from db.schemas.company_shema import (CompaniesListResponse, CompanyCreate, CompanyResponse,
                                       CompanyUpdate)
 from db.session import get_db
 from fastapi import APIRouter, Depends
 from services.auth import Auth
 from services.company_service.create import CompanyCreateService
 from services.company_service.delete import CompanyDeleteService
+from services.company_service.read import CompanyReadService
 from services.company_service.update import CompanyUpdateService
 from services.user_service.read import UserReadService
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/companies", tags=["Companies"])
+
+@router.get("/", response_model=CompaniesListResponse)
+async def get_all_companies(db: AsyncSession = Depends(get_db)) -> CompaniesListResponse:
+    companies = await CompanyReadService.get_all_companies(db)
+    total = len(companies)
+    
+    return CompaniesListResponse.model_validate({"companies": companies, "total": total})
+
+@router.get("/{company_id}", response_model=CompanyResponse)
+async def get_company(company_id: int, db: AsyncSession = Depends(get_db)):
+    return await CompanyReadService().read_company_from_db(db, company_id)
 
 @router.post("/", response_model=CompanyResponse)
 async def create_company_endpoint(company_data: CompanyCreate, db: AsyncSession = Depends(get_db), payload: dict = Depends(Auth().get_token_payload)):

@@ -1,6 +1,8 @@
-from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
+
 from db.models.company import VisibilityEnum
+from pydantic import BaseModel
+
 
 class CompanyResponse(BaseModel):
     id: int
@@ -16,3 +18,7 @@ class CompanyUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     visibility: Optional[VisibilityEnum] = None
+    
+class CompaniesListResponse(BaseModel):
+    companies: List[CompanyResponse]
+    total: int
