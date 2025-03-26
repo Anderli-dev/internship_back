@@ -8,16 +8,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 class CompanyCreateService:
     @staticmethod
     async def create_company(db: AsyncSession, company: CompanyCreate, user_id: int) -> Company:
-        logger.debug("Creating company")
-        company: Company = Company(name=company.name, description=company.description)
+        logger.info(f"Starting creation of company: {company.name}")
         
-        logger.debug("Adding company to db")
-        db.add(company)
+        new_company: Company = Company(name=company.name, description=company.description)
+        logger.info("Adding new company instance to the session")
+        db.add(new_company)
         await db.commit()
-        await db.refresh(company)
-        
-        cur = CompanyUserRole(user_id=user_id, company_id=company.id, role=RoleEnum.owner)
+        await db.refresh(new_company)
+        logger.info(f"Company created with ID: {new_company.id}")
+
+        logger.info(f"Assigning role 'owner' to user ID {user_id} for company ID {new_company.id}")
+        cur = CompanyUserRole(user_id=user_id, company_id=new_company.id, role=RoleEnum.owner)
         db.add(cur)
         await db.commit()
-        
-        return company
+        logger.info("User role assignment committed successfully")
+
+        return new_company

@@ -12,19 +12,24 @@ class CompanyUpdateService:
     @staticmethod
     @check_user_role(role_enum=RoleEnum.owner)
     async def update_company(db: AsyncSession, company_id: int, company_data: CompanyUpdate, user_id: int):
-        company = await db.execute(select(Company).filter(Company.id == company_id))
-        company = company.scalars().first()
+        logger.info(f"User ID {user_id} initiated update for company ID {company_id}")
+
+        company_result = await db.execute(select(Company).filter(Company.id == company_id))
+        company = company_result.scalars().first()
+
         if not company:
+            logger.error(f"Company with ID {company_id} not found")
             raise HTTPException(status_code=404, detail="Company not found")
 
-        logger.debug("Setting up company data")
+        logger.info(f"Updating company ID {company_id} with new data")
+
         for key, data in company_data.model_dump(exclude_unset=True).items():
+            logger.debug(f"Updating field '{key}' to '{data}'")
             setattr(company, key, data)
-        
-        logger.debug("Saving company data in db")
-        
+
         await db.commit()
         await db.refresh(company)
 
+        logger.info(f"Company with ID {company_id} updated successfully by user ID {user_id}")
+
         return company
-    
