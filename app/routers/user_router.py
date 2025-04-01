@@ -10,13 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi_utils.cbv import cbv
 from fastapi_utils.inferring_router import InferringRouter
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.user_service import (
-    create_new_user,
-    get_users,
-    read_user,
-    update_user_data,
-    user_delete,
-)
+from services.user_service import UserRepository
 from utils.hash_password import hash_password
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -28,7 +22,8 @@ class UserCBV:
 
     @router.get("/", response_model=UsersListResponse)
     async def get_all_users(self):
-        users = await get_users(self.db)
+        service = UserRepository(self.db)
+        users = await service.get_all()
         total = len(users)
 
         if not users:
@@ -41,7 +36,8 @@ class UserCBV:
     @router.post("/")
     async def create_user(self, user: UserSignUp):
         user.password = hash_password(user.password)
-        new_user = await create_new_user(user, self.db)
+        service = UserRepository(self.db)
+        new_user = await service.create(user)
 
         if new_user is None:
             raise HTTPException(status_code=400, detail="User creation failed!")
@@ -51,7 +47,8 @@ class UserCBV:
 
     @router.get("/{user_id}", response_model=UserDetailResponse)
     async def get_user(self, user_id: int):
-        user = await read_user(user_id, self.db)
+        service = UserRepository(self.db)
+        user = await service.get_user(user_id)
 
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -61,10 +58,10 @@ class UserCBV:
 
     @router.put("/{user_id}", response_model=UserUpdate)
     async def update_user(self, user_id: int, user_data: UserUpdate):
-        updated_user = await update_user_data(
+        service = UserRepository(self.db)
+        updated_user = await service.update(
             user_id,
-            user_data.model_dump(exclude_unset=True),
-            self.db,
+            user_data.model_dump(exclude_unset=True)
         )
 
         logger.debug("Updating user successful")
@@ -73,4 +70,5 @@ class UserCBV:
     @router.delete("/{user_id}")
     async def delete_user(self, user_id: int):
         logger.debug("Deleting user successful")
-        return await user_delete(user_id, self.db)
+        service = UserRepository(self.db)
+        return await service.delete(user_id)
