@@ -23,20 +23,9 @@ class UserRepository:
         user = await self.db.execute(select(User).filter(User.id == user_id))
         user = user.scalars().first()
         
-        if not user:
-            logger.error("User not found!")
-            raise HTTPException(status_code=404, detail="User not found!")
-        
         return user
 
-    async def create(self, user: UserSignUp) -> User:
-        logger.debug("Checking if user exists")
-        result = await self.db.execute(select(User).where((User.email == user.email) | (User.username == user.username)))
-        existing_user = result.scalars().first()
-
-        if existing_user:
-            raise HTTPException(status_code=400, detail="User with this email or username already exists")
-        
+    async def create(self, user: UserSignUp) -> User: 
         logger.debug("Creating user")
         db_user = User(username=user.username, email=user.email, password=user.password)
         
@@ -63,13 +52,17 @@ class UserRepository:
         
         return user
 
-    async def delete(self, user_id: int) -> None:
-        logger.debug("Deleting user")
+    async def delete(self, user_id: int) -> bool:
+        logger.debug("Looking for user to delete")
         result = await self.db.execute(select(User).where(User.id == user_id))
         user = result.scalars().first()
 
-        logger.debug("Deleting user in db")
+        if not user:
+            logger.debug(f"User with ID {user_id} not found")
+            return False
+
+        logger.debug(f"Deleting user with ID {user_id}")
         await self.db.delete(user)
         await self.db.commit()
 
-        return {"message": "User deleted successfully"}
+        return True

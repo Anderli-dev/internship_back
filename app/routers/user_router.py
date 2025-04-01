@@ -49,9 +49,6 @@ class UserCBV:
 
             logger.debug("Creating user successful")
             return new_user
-        except HTTPException as e:
-            logger.warning(f"User creation failed: {e.detail}")
-            raise
         except Exception:
             logger.exception("Unexpected error during user creation")
             raise HTTPException(status_code=500, detail="Internal server error")
@@ -63,9 +60,6 @@ class UserCBV:
             user = await service.get_user(user_id)
             logger.debug("Getting user successful")
             return UserDetailResponse.model_validate(user.__dict__)
-        except HTTPException as e:
-            logger.warning(f"User not found: {e.detail}")
-            raise
         except Exception:
             logger.exception("Unexpected error during user fetch")
             raise HTTPException(status_code=500, detail="Internal server error")
@@ -80,9 +74,6 @@ class UserCBV:
             )
             logger.debug("Updating user successful")
             return UserDetailResponse.model_validate(updated_user.__dict__)
-        except HTTPException as e:
-            logger.warning(f"User update failed: {e.detail}")
-            raise
         except Exception:
             logger.exception("Unexpected error during user update")
             raise HTTPException(status_code=500, detail="Internal server error")
@@ -91,12 +82,13 @@ class UserCBV:
     async def delete_user(self, user_id: int):
         try:
             service = UserRepository(self.db)
-            result = await service.delete(user_id)
-            logger.debug("Deleting user successful")
-            return result
-        except HTTPException as e:
-            logger.warning(f"User deletion failed: {e.detail}")
-            raise
+            deleted = await service.delete(user_id)
+            if not deleted:
+                logger.warning(f"User with ID {user_id} not found")
+                raise HTTPException(status_code=404, detail="User not found")
+
+            logger.debug(f"User with ID {user_id} deleted successfully")
+            return {"message": "User deleted successfully"}
         except Exception:
             logger.exception("Unexpected error during user deletion")
             raise HTTPException(status_code=500, detail="Internal server error")
