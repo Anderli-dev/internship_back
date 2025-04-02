@@ -1,95 +1,74 @@
-from core.logger import logger
-from db.schemas.UserSchema import (
-    UserDetailResponse,
-    UserSignUp,
-    UsersListResponse,
-    UserUpdate,
-)
-from db.session import get_db
-from fastapi import APIRouter, Depends, HTTPException, Response
-from fastapi_utils.cbv import cbv
-from fastapi_utils.inferring_router import InferringRouter
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.user_service import UserRepository
-from utils.hash_password import hash_password
+from db.session import get_db
+from db.schemas.UserSchema import UserSignUp, UserUpdate, UsersListResponse, UserDetailResponse
+from services.user_service import UserService
+from core.logger import logger
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@cbv(router)
-class UserCBV:
-    db: AsyncSession = Depends(get_db)
+@router.get("/", response_model=UsersListResponse)
+async def get_all_users(db: AsyncSession = Depends(get_db)):
+    service = UserService(db)
+    try:
+        users, total = await service.get_all_users()
+        if not users:
+            logger.debug("No users in DB")
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        return UsersListResponse(users=users, total=total)
+    except Exception as e:
+        logger.exception(f"Failed to fetch users: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
-    @router.get("/", response_model=UsersListResponse)
-    async def get_all_users(self):
-        try:
-            service = UserRepository(self.db)
-            users = await service.get_all()
-            total = len(users)
 
-            if not users:
-                logger.debug("No users in db!")
-                return Response(status_code=204)
+@router.post("/", response_model=UserDetailResponse)
+async def create_user(user: UserSignUp, db: AsyncSession = Depends(get_db)):
+    service = UserService(db)
+    try:
+        new_user = await service.create_user(user)
+        if not new_user:
+            raise HTTPException(status_code=400, detail="User creation failed")
+        return new_user
+    except Exception as e:
+        logger.exception(f"Failed to create user: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
-            logger.debug("Getting all users successful")
-            return UsersListResponse(users=users, total=total)
-        except Exception as e:
-            logger.exception("Failed to get all users")
-            raise HTTPException(status_code=500, detail="Internal server error")
 
-    @router.post("/")
-    async def create_user(self, user: UserSignUp):
-        try:
-            user.password = hash_password(user.password)
-            service = UserRepository(self.db)
-            new_user = await service.create(user)
+@router.get("/{user_id}", response_model=UserDetailResponse)
+async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
+    service = UserService(db)
+    try:
+        user = await service.get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return user
+    except Exception as e:
+        logger.exception(f"Failed to fetch user: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
-            if new_user is None:
-                raise HTTPException(status_code=400, detail="User creation failed!")
 
-            logger.debug("Creating user successful")
-            return new_user
-        except Exception:
-            logger.exception("Unexpected error during user creation")
-            raise HTTPException(status_code=500, detail="Internal server error")
+@router.put("/{user_id}", response_model=UserDetailResponse)
+async def update_user(user_id: int, user_data: UserUpdate, db: AsyncSession = Depends(get_db)):
+    service = UserService(db)
+    try:
+        updated_user = await service.update_user(user_id, user_data)
+        if not updated_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return updated_user
+    except Exception as e:
+        logger.exception(f"Failed to update user: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
-    @router.get("/{user_id}", response_model=UserDetailResponse)
-    async def get_user(self, user_id: int):
-        try:
-            service = UserRepository(self.db)
-            user = await service.get_user(user_id)
-            logger.debug("Getting user successful")
-            return UserDetailResponse.model_validate(user.__dict__)
-        except Exception:
-            logger.exception("Unexpected error during user fetch")
-            raise HTTPException(status_code=500, detail="Internal server error")
 
-    @router.put("/{user_id}", response_model=UserUpdate)
-    async def update_user(self, user_id: int, user_data: UserUpdate):
-        try:
-            service = UserRepository(self.db)
-            updated_user = await service.update(
-                user_id,
-                user_data.model_dump(exclude_unset=True)
-            )
-            logger.debug("Updating user successful")
-            return UserDetailResponse.model_validate(updated_user.__dict__)
-        except Exception:
-            logger.exception("Unexpected error during user update")
-            raise HTTPException(status_code=500, detail="Internal server error")
-
-    @router.delete("/{user_id}")
-    async def delete_user(self, user_id: int):
-        try:
-            service = UserRepository(self.db)
-            deleted = await service.delete(user_id)
-            if not deleted:
-                logger.warning(f"User with ID {user_id} not found")
-                raise HTTPException(status_code=404, detail="User not found")
-
-            logger.debug(f"User with ID {user_id} deleted successfully")
-            return {"message": "User deleted successfully"}
-        except Exception:
-            logger.exception("Unexpected error during user deletion")
-            raise HTTPException(status_code=500, detail="Internal server error")
-
+@router.delete("/{user_id}")
+async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
+    service = UserService(db)
+    try:
+        deleted = await service.delete_user(user_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"message": "User deleted successfully"}
+    except Exception as e:
+        logger.exception(f"Failed to delete user: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

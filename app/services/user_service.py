@@ -1,68 +1,34 @@
-from core.logger import logger
-from db.models import User
-from db.schemas.UserSchema import UserBase, UserSignUp, UserUpdate
-from fastapi import HTTPException
+from db.schemas.UserSchema import UserSignUp, UserUpdate, UserDetailResponse, UserBase
+from repositories.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from utils.hash_password import hash_password
 
-
-class UserRepository:
+class UserService:
     def __init__(self, db: AsyncSession):
-        self.db = db
+        self.repo = UserRepository(db)
 
-    async def get_all(self, skip: int = 0, limit: int = 10) -> list[User]:
-        logger.debug("Getting all users")
-        users = await self.db.execute(select(User).offset(skip).limit(limit))
-        users = users.scalars().all()
-        users = [UserBase.model_validate(user.__dict__) for user in users] # Creating list of UserBase
-        
-        return users
+    async def get_all_users(self) -> tuple[list[UserBase], int]:
+        users = await self.repo.get_all()
+        return users, len(users)
 
-    async def get_user(self, user_id: int) -> User:
-        logger.debug("Getting user")
-        user = await self.db.execute(select(User).filter(User.id == user_id))
-        user = user.scalars().first()
-        
-        return user
+    async def create_user(self, user: UserSignUp) -> UserDetailResponse | None:
+        user.password = hash_password(user.password)
+        new_user = await self.repo.create(user)
+        if not new_user:
+            return None
+        return UserDetailResponse.model_validate(new_user.__dict__)
 
-    async def create(self, user: UserSignUp) -> User: 
-        logger.debug("Creating user")
-        db_user = User(username=user.username, email=user.email, password=user.password)
-        
-        logger.debug("Adding user to db")
-        await self.db.add(db_user)
-        await self.db.commit()
-        await self.db.refresh(db_user)
-        
-        return db_user
-
-    async def update(self, user_id: int, user_data: UserUpdate) -> User:
-        logger.debug("Updating user")
-        user = await self.db.execute(select(User).filter(User.id == user_id))
-        user = user.scalars().first()
-        
-        logger.debug("Setting up user data")
-        # Updating not None fields
-        for key, data in user_data.items():
-            setattr(user, key, data)
-        
-        logger.debug("Saving new user data in db")
-        await self.db.commit()
-        await self.db.refresh(user)
-        
-        return user
-
-    async def delete(self, user_id: int) -> bool:
-        logger.debug("Looking for user to delete")
-        result = await self.db.execute(select(User).where(User.id == user_id))
-        user = result.scalars().first()
-
+    async def get_user(self, user_id: int) -> UserDetailResponse | None:
+        user = await self.repo.get_user(user_id)
         if not user:
-            logger.debug(f"User with ID {user_id} not found")
-            return False
+            return None
+        return UserDetailResponse.model_validate(user.__dict__)
 
-        logger.debug(f"Deleting user with ID {user_id}")
-        await self.db.delete(user)
-        await self.db.commit()
+    async def update_user(self, user_id: int, user_data: UserUpdate) -> UserDetailResponse | None:
+        updated_user = await self.repo.update(user_id, user_data.model_dump(exclude_unset=True))
+        if not updated_user:
+            return None
+        return UserDetailResponse.model_validate(updated_user.__dict__)
 
-        return True
+    async def delete_user(self, user_id: int) -> bool:
+        return await self.repo.delete(user_id)
