@@ -1,7 +1,11 @@
-from db.schemas.UserSchema import UserSignUp, UserUpdate, UserDetailResponse, UserBase
+from typing import Optional
+
+from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,
+                                   UserUpdate)
 from repositories.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.hash_password import hash_password
+
 
 class UserService:
     def __init__(self, db: AsyncSession):
@@ -11,14 +15,14 @@ class UserService:
         users = await self.repo.get_all()
         return users, len(users)
 
-    async def create_user(self, user: UserSignUp) -> UserDetailResponse | None:
+    async def create_user(self, user: UserSignUp) -> Optional[UserDetailResponse]:
         user.password = hash_password(user.password)
         new_user = await self.repo.create(user)
         if not new_user:
             return None
         return UserDetailResponse.model_validate(new_user.__dict__)
 
-    async def get_user(self, user_id: int) -> UserDetailResponse | None:
+    async def get_user(self, user_id: int) -> Optional[UserDetailResponse]:
         user = await self.repo.get_user(user_id)
         if not user:
             return None
