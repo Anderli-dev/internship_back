@@ -27,8 +27,8 @@ class UserRepository:
         await self.db.commit()
         await self.db.refresh(db_user)
         return db_user
-
-    async def update(self, user_id: int, user_data: dict) -> User | None:
+    
+    async def update(self, user_id: int, user_update: UserUpdate) -> User | None:
         result = await self.db.execute(
             select(User).filter(User.id == user_id)
         )
@@ -36,7 +36,8 @@ class UserRepository:
         if not user:
             return None
 
-        for key, value in user_data.items():
+        update_data = user_update.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
             setattr(user, key, value)
 
         await self.db.commit()

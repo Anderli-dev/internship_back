@@ -14,9 +14,6 @@ async def get_all_users(db: AsyncSession = Depends(get_db)):
     service = UserService(db)
     try:
         users, total = await service.get_all_users()
-        if not users:
-            logger.debug("No users in DB")
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
         return UsersListResponse(users=users, total=total)
     except Exception as e:
         logger.exception(f"Failed to fetch users: {e}")

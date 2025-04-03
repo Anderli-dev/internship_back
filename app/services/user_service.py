@@ -29,7 +29,7 @@ class UserService:
         return UserDetailResponse.model_validate(user.__dict__)
 
     async def update_user(self, user_id: int, user_data: UserUpdate) -> UserDetailResponse | None:
-        updated_user = await self.repo.update(user_id, user_data.model_dump(exclude_unset=True))
+        updated_user = await self.repo.update(user_id, user_data)
         if not updated_user:
             return None
         return UserDetailResponse.model_validate(updated_user.__dict__)
