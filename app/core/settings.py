@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     
     secret_key: str
     jwt_algorithm: str
+    auth0_algorithm: str
     
     auth0_app_host: str
     auth0_domain: str
@@ -39,5 +40,5 @@ class Settings(BaseSettings):
     cors_origins: List[str]
     
     model_config = SettingsConfigDict(env_file=str(pathlib.Path(__file__).resolve().parents[2] / ".env"))
-    
-settings = Settings() 
+        
+settings = Settings()

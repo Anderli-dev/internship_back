@@ -1,6 +1,6 @@
 import asyncio
 from logging.config import fileConfig
-from app.core.logger import logger
+from core.logger import logger
 from app.core.settings import settings
 
 from alembic import context

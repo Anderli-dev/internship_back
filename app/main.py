@@ -1,5 +1,5 @@
-from core.settings import settings
 import uvicorn
+from core.settings import settings
 from fastapi import FastAPI
 from routers import db_router, user_router, auth_router, auth0_router
 from utils.cors import add_cors_middleware
@@ -14,7 +14,8 @@ app.include_router(auth_router.router)
 app.include_router(auth0_router.router)
 
 @app.get("/")
-async def home() -> dict:
+def home() -> dict:
+    print(settings.cors_origins)
     return {"status_code": 200, "detail": "ok", "result": "working"}
     
 if __name__ == "__main__":

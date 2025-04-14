@@ -1,84 +1,39 @@
-import asyncio
-from jose import exceptions
-from jose import jwt
-from core.logger import logger
-from core.settings import settings
-from db.models import User
 from db.schemas.UserSchema import UserBase, UserSignUp, UserUpdate
-from fastapi import HTTPException
+from typing import Optional
+
+from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,
+                                   UserUpdate)
+from repositories.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from utils.hash_password import hash_password
 
 
-async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10) -> list[UserBase]:
-    logger.debug("Getting all users")
-    users = await db.execute(select(User).offset(skip).limit(limit))
-    users = users.scalars().all()
-    users = [UserBase.model_validate(user.__dict__) for user in users] # Creating list of UserBase
-    
-    return users
+class UserService:
+    def __init__(self, db: AsyncSession):
+        self.repo = UserRepository(db)
 
-async def read_user(user_id: int, db: AsyncSession) -> User:
-    logger.debug("Getting user")
-    user = await db.execute(select(User).filter(User.id == user_id))
-    user = user.scalars().first()
-    
-    if not user:
-        logger.error("User not found!")
-        raise HTTPException(status_code=404, detail="User not found!")
-    
-    return user
+    async def get_all_users(self) -> tuple[list[UserBase], int]:
+        users = await self.repo.get_all()
+        return users, len(users)
 
-async def create_new_user(user: UserSignUp, db: AsyncSession) -> User:
-    logger.debug("Checking if user exists")
-    result = await db.execute(select(User).where((User.email == user.email) | (User.username == user.username)))
-    existing_user = result.scalars().first()
+    async def create_user(self, user: UserSignUp) -> Optional[UserDetailResponse]:
+        user.password = hash_password(user.password)
+        new_user = await self.repo.create(user)
+        if not new_user:
+            return None
+        return UserDetailResponse.model_validate(new_user.__dict__)
+    
+    async def get_user(self, user_id: int) -> Optional[UserDetailResponse]:
+        user = await self.repo.get_user(user_id)
+        if not user:
+            return None
+        return UserDetailResponse.model_validate(user.__dict__)
 
-    if existing_user:
-        raise HTTPException(status_code=400, detail="User with this email or username already exists")
-    
-    logger.debug("Creating user")
-    db_user = User(username=user.username, email=user.email, password=user.password)
-    
-    logger.debug("Adding user to db")
-    db.add(db_user)
-    await db.commit()
-    await db.refresh(db_user)
-    
-    return db_user
+    async def update_user(self, user_id: int, user_data: UserUpdate) -> UserDetailResponse | None:
+        updated_user = await self.repo.update(user_id, user_data)
+        if not updated_user:
+            return None
+        return UserDetailResponse.model_validate(updated_user.__dict__)
 
-async def update_user_data(user_id: int, user_data: UserUpdate, db: AsyncSession) -> User:
-    logger.debug("Updating user")
-    user = await db.execute(select(User).filter(User.id == user_id))
-    user = user.scalars().first()
-    
-    if not user:
-        logger.error("User not found!")
-        raise HTTPException(status_code=404, detail="User not found!")
-    
-    logger.debug("Setting up user data")
-    # Updating not None fields
-    for key, data in user_data.items():
-        setattr(user, key, data)
-    
-    logger.debug("Saving new user data in db")
-    await db.commit()
-    await db.refresh(user)
-    
-    return user
-    
-
-async def user_delete(user_id: int, db: AsyncSession) -> dict:
-    logger.debug("Deleting user")
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalars().first()
-
-    if not user:
-        logger.error("User not found!")
-        raise HTTPException(status_code=404, detail="User not found!")
-
-    logger.debug("Deleting user in db")
-    await db.delete(user)
-    await db.commit()
-
-    return {"message": "User deleted successfully"}
+    async def delete_user(self, user_id: int) -> bool:
+        return await self.repo.delete(user_id)

@@ -1,6 +1,6 @@
-from fastapi import HTTPException
-from core.settings import settings
 from core.logger import logger
+from core.settings import settings
+from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
