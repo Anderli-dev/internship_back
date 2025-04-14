@@ -1,12 +1,17 @@
 import uvicorn
+from app.core.exceptions import InvalidToken, invalid_token_handler, token_expired_handler
 from core.settings import settings
 from fastapi import FastAPI
 from routers import db_router, user_router, auth_router, auth0_router
 from utils.cors import add_cors_middleware
+from jose import exceptions
 
 app = FastAPI()
 
 add_cors_middleware(app)
+
+app.add_exception_handler(exceptions.ExpiredSignatureError, token_expired_handler)
+app.add_exception_handler(InvalidToken, invalid_token_handler)
 
 app.include_router(db_router.router)
 app.include_router(user_router.router)
