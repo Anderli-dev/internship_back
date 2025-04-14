@@ -2,14 +2,12 @@ from core.logger import logger
 from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
 from db.session import get_db
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
-                                   UsersListResponse, UserUpdate)
-from db.session import get_db
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Security, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from services.user_service import UserService
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from services.auth_service import AuthService
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -106,3 +104,18 @@ async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )
+        
+security = HTTPBearer()
+@router.get("/me/", response_model=UserDetailResponse)
+async def get_me(credentials: HTTPAuthorizationCredentials = Security(security), db: AsyncSession = Depends(get_db)) -> UserDetailResponse:
+    logger.info("Getting information about yourself.")
+    service = AuthService(db)
+    try:
+        user = await service.get_current_user(credentials)
+        
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    except Exception as e:
+        logger.error(f"Token error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error!")
+    return UserDetailResponse.model_validate(user.__dict__)

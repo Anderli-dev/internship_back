@@ -5,7 +5,7 @@ from jose import exceptions, jwt
 from routers import auth0_router, auth_router, db_router, user_router
 from utils.cors import add_cors_middleware
 
-from app.core.exceptions import (InvalidToken, invalid_token_handler,
+from core.exceptions import (InvalidToken, invalid_token_handler,
                                  token_claims_error, token_expired_handler)
 
 app = FastAPI()
