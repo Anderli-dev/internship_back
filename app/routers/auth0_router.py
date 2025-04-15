@@ -30,6 +30,7 @@ async def callback(request: Request, db: AsyncSession = Depends(get_db)) -> dict
     # Callback getting code for getting token from Auth0
     logger.info("Callback for Auth0 token.")
     auth_service = Auth0Service(db)
+    
     code = request.query_params.get("code")
     
     if not code:
@@ -41,18 +42,15 @@ async def callback(request: Request, db: AsyncSession = Depends(get_db)) -> dict
     email = auth_service.get_email_from_token(tokens["access_token"])
     
     # Creating user if it dose not exist
-    existing_user = await db.execute(select(User).filter(User.email == email))
-    existing_user = existing_user.scalars().first()
-    
-    if not existing_user:
-        logger.info("Auth0 user dose not exist.")
-        db_user = User(email=email)
-        logger.debug("Adding user to db")
-        db.add(db_user)
-        await db.commit()
-        await db.refresh(db_user)
-        logger.info("Auth0 user created.")
-    
+    user = await auth_service.add_user_if_not_exists(email)
+    if not user:
+        logger.error("Incorrect username or password!")
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
     logger.info("Auth0 token Login success!")
     return {"access_token": tokens["access_token"], "email": email}
 

@@ -95,6 +95,20 @@ class AuthService:
         return user
     
 class Auth0Service:
+    def __init__(self, db: AsyncSession):
+        self.repo = UserRepository(db)
+        
+    async def add_user_if_not_exists(self, email):
+        user = await self.repo.get_user_by_email(email)
+        
+        if not user:
+            logger.info("Auth0 user dose not exist.")
+            user = await self.repo.create({"email":email})
+            logger.info("Auth0 user created.")
+            return user
+        
+        return user
+    
     @staticmethod
     def get_tokens(code: str) -> dict:
         # Getting tokes, not only access token but may be and id_token
