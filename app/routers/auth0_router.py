@@ -1,5 +1,6 @@
 from urllib.parse import quote
 
+from services.auth_service import Auth0Service
 from core.logger import logger
 from core.settings import settings
 from db.models.user import User
@@ -8,8 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from utils.auth0.get_email_from_token import get_email_from_token
-from utils.auth0.get_tokens import get_tokens
 
 router = APIRouter(prefix="/auth0", tags=["Auth0"])
 
@@ -30,15 +29,16 @@ async def login_for_access_token_Auth0():
 async def callback(request: Request, db: AsyncSession = Depends(get_db)) -> dict:
     # Callback getting code for getting token from Auth0
     logger.info("Callback for Auth0 token.")
+    auth_service = Auth0Service(db)
     code = request.query_params.get("code")
     
     if not code:
         logger.error("Missing code for Auth0 token.")
         raise HTTPException(status_code=400, detail="Missing code parameter!")
 
-    tokens = get_tokens(code)
+    tokens = auth_service.get_tokens(code)
     
-    email = get_email_from_token(tokens["access_token"])
+    email = auth_service.get_email_from_token(tokens["access_token"])
     
     # Creating user if it dose not exist
     existing_user = await db.execute(select(User).filter(User.email == email))

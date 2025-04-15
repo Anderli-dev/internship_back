@@ -20,7 +20,13 @@ class UserRepository:
             select(User).filter(User.id == user_id)
         )
         return result.scalars().first()
-
+    
+    async def get_user_by_email(self, user_email: str):
+        user = await self.db.execute(select(User).filter(User.email == user_email))
+        user = user.scalars().first()
+        
+        return user
+    
     async def create(self, user: UserSignUp) -> User:
         db_user = User(**user.model_dump())
         self.db.add(db_user)

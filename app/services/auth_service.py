@@ -1,27 +1,26 @@
 import asyncio
+import json
 from datetime import datetime, timedelta
 from typing import Optional
+from urllib.request import urlopen
 
+import requests
 from core.exceptions import InvalidToken
-from utils.auth0.get_jwks import get_jwks
-from utils.auth0.get_rsa_key import get_rsa_key
-from utils.auth0.get_token_payload import get_token_payload
 from core.logger import logger
 from core.settings import settings
 from db.models import User
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
+from repositories.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.hash_password import verify_password
-
-from repositories.auth_repository import AuthRepository
-from db.models import User
+from jose import JWTError
 
 class AuthService:
     def __init__(self, db: AsyncSession):
         self.ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-        self.repo = AuthRepository(db)
+        self.repo = UserRepository(db)
 
     async def authenticate_user(self, user_email: str, password: str) -> User:
         logger.info("User authentication.")
@@ -76,15 +75,15 @@ class AuthService:
         logger.info("Auth0 token verification.")
         token = credentials.credentials
         
-        jwks = get_jwks()
+        jwks = Auth0Service.get_jwks()
         
-        rsa_key = get_rsa_key(jwks, token)
+        rsa_key = Auth0Service.get_rsa_key(jwks, token)
 
         if not rsa_key:
             logger.error("Auth0 token invalid JWT Key.")
             raise InvalidToken
 
-        payload = get_token_payload(token, rsa_key)
+        payload = Auth0Service.get_token_payload(token, rsa_key)
         logger.info("Auth0 token verification success.")
 
         user: User = await self.repo.get_user_by_email(payload["user_email"])
@@ -94,3 +93,91 @@ class AuthService:
             return None
 
         return user
+    
+class Auth0Service:
+    @staticmethod
+    def get_tokens(code: str) -> dict:
+        # Getting tokes, not only access token but may be and id_token
+        logger.info("Getting tokens from Auth0.")
+        token_data = {
+            "grant_type": "authorization_code",
+            "client_id": settings.client_id,
+            "client_secret": settings.client_secret,
+            "code": code,
+            "redirect_uri": f"http://{settings.auth0_app_host}:{settings.app_port}/auth/callback"
+        }
+
+        response = requests.post(f"https://{settings.auth0_domain}/oauth/token", json=token_data)
+        
+        if response.status_code != 200:
+            logger.info("Getting tokens from Auth0 error: failed to fetch token.")
+            raise HTTPException(status_code=400, detail="Failed to fetch token!")
+
+        tokens = response.json()
+        logger.info("Getting tokens from Auth0 success.")
+        return tokens
+
+    @classmethod
+    def get_email_from_token(self, token: str) -> str:
+        logger.info("Getting email from Auth0 token.")
+        jwks = self.get_jwks()
+        
+        rsa_key = self.get_rsa_key(jwks, token)
+
+        if not rsa_key:
+            logger.error("Auth0 invalid JWT Key when getting email.")
+            raise HTTPException(status_code=401, detail="Invalid JWT Key")
+        
+        payload = self.get_token_payload(token, rsa_key)
+        # Payload inclludes parameter "user_email" that consist email of user
+        email = payload.get("user_email")
+
+        if email is None:
+            logger.error("Auth0 invalid token when getting email.")
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        return email
+    
+    @staticmethod
+    def get_jwks() -> dict:
+        logger.info("Getting jwks from Auth0.")
+        jwks_url = f"https://{settings.auth0_domain}/.well-known/jwks.json"
+        response = urlopen(jwks_url)
+        
+        return json.loads(response.read())
+    
+    @staticmethod
+    def get_rsa_key(jwks: dict, token: str) -> dict:
+        logger.info("Getting rsa_key from Auth0.")
+        header = jwt.get_unverified_header(token)
+        rsa_key = {}
+
+        for key in jwks["keys"]:
+            if key["kid"] == header["kid"]:
+                rsa_key = {
+                    "kty": key["kty"],
+                    "kid": key["kid"],
+                    "use": key["use"],
+                    "n": key["n"],
+                    "e": key["e"]
+                }
+        
+        return rsa_key
+    
+    @staticmethod
+    def get_token_payload(token: str, rsa_key: dict) -> dict:
+        logger.info("Getting token payload from Auth0.")
+        try:
+            payload = jwt.decode(token,
+                rsa_key,
+                algorithms=settings.auth0_algorithm,
+                audience=settings.auth0_audience,
+                issuer=f"https://{settings.auth0_domain}/")
+            if payload is None:
+                logger.error("Getting token payload from Auth0 error: invalid token.")
+                raise HTTPException(status_code=401, detail="Invalid token")
+            logger.info("Getting token payload from Auth0 success.")
+            return payload
+        except JWTError as e:
+            logger.error("Getting token payload from Auth0 error: failed to decode token.")
+            raise HTTPException(status_code=400, detail="Failed to decode token!")
