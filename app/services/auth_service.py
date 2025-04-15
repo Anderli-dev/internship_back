@@ -43,7 +43,7 @@ class AuthService:
         logger.info("Token creation success.")
         return encoded_jwt
     
-    async def get_current_user(self, credentials: HTTPAuthorizationCredentials):
+    async def get_current_user(self, credentials: HTTPAuthorizationCredentials) -> User:
         try:
             return await self.verify_auth0_jwt(credentials)
         except Exception:
@@ -98,7 +98,7 @@ class Auth0Service:
     def __init__(self, db: AsyncSession):
         self.repo = UserRepository(db)
         
-    async def add_user_if_not_exists(self, email):
+    async def add_user_if_not_exists(self, email: str) -> User:
         user = await self.repo.get_user_by_email(email)
         
         if not user:

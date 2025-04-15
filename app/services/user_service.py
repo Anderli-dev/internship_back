@@ -31,7 +31,7 @@ class UserService:
             return None
         return UserDetailResponse.model_validate(user.__dict__)
 
-    async def update_user(self, user_id: int, user_update: UserUpdate) -> UserDetailResponse | None:
+    async def update_user(self, user_id: int, user_update: UserUpdate) -> Optional[UserDetailResponse]:
         updated_user = await self.repo.update(user_id, user_update.model_dump(exclude_unset=True))
         if not updated_user:
             logger.info("Failed to update. User does not exist in db")

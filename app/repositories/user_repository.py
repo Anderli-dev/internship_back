@@ -20,7 +20,7 @@ class UserRepository:
         result = await self.db.execute(select(User).filter(User.id == user_id))
         return result.scalars().first()
     
-    async def get_user_by_email(self, user_email: str):
+    async def get_user_by_email(self, user_email: str) -> User | None:
         logger.info("Getting user from db by email.")
         result = await self.db.execute(select(User).filter(User.email == user_email))
         return result.scalars().first()
