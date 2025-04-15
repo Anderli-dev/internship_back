@@ -18,7 +18,7 @@ class UserService:
 
     async def create_user(self, user: UserSignUp) -> Optional[UserDetailResponse]:
         user.password = hash_password(user.password)
-        new_user = await self.repo.create(user)
+        new_user = await self.repo.create(user.model_dump())
         if not new_user:
             return None
         return UserDetailResponse.model_validate(new_user.__dict__)

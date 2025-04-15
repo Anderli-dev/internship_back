@@ -1,9 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from core.logger import logger
 from db.models import User
-from db.schemas.UserSchema import UserBase, UserSignUp, UserUpdate
+from db.schemas.UserSchema import UserBase, UserUpdate
 
 
 class UserRepository:
@@ -16,19 +15,15 @@ class UserRepository:
         return [UserBase.model_validate(user.__dict__) for user in users]
 
     async def get_user(self, user_id: int) -> User | None:
-        result = await self.db.execute(
-            select(User).filter(User.id == user_id)
-        )
+        result = await self.db.execute(select(User).filter(User.id == user_id))
         return result.scalars().first()
     
     async def get_user_by_email(self, user_email: str):
-        user = await self.db.execute(select(User).filter(User.email == user_email))
-        user = user.scalars().first()
-        
-        return user
+        result = await self.db.execute(select(User).filter(User.email == user_email))
+        return result.scalars().first()
     
-    async def create(self, user: UserSignUp) -> User:
-        db_user = User(**user.model_dump())
+    async def create(self, user_data: dict) -> User:
+        db_user = User(**user_data)
         self.db.add(db_user)
         await self.db.commit()
         await self.db.refresh(db_user)
