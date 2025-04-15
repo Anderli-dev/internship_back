@@ -29,16 +29,13 @@ class UserRepository:
         await self.db.refresh(db_user)
         return db_user
     
-    async def update(self, user_id: int, user_update: UserUpdate) -> User | None:
-        result = await self.db.execute(
-            select(User).filter(User.id == user_id)
-        )
+    async def update(self, user_id: int, user_data: dict) -> User | None:
+        result = await self.db.execute(select(User).filter(User.id == user_id))
         user = result.scalars().first()
         if not user:
             return None
 
-        update_data = user_update.model_dump(exclude_unset=True)
-        for key, value in update_data.items():
+        for key, value in user_data.items():
             setattr(user, key, value)
 
         await self.db.commit()
@@ -46,9 +43,7 @@ class UserRepository:
         return user
 
     async def delete(self, user_id: int) -> bool:
-        result = await self.db.execute(
-            select(User).filter(User.id == user_id)
-        )
+        result = await self.db.execute(select(User).filter(User.id == user_id))
         user = result.scalars().first()
         if not user:
             return False

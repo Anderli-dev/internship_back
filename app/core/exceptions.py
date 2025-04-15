@@ -11,6 +11,10 @@ class Auth0Error(Exception):
     def __init__(self, detail: str):
         self.detail = detail
         
+def iternal_server_error(request: Request, exc: Exception):
+    logger.exception(f"Error: {exc}")
+    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Internal server error")
+        
 def token_expired_handler(request: Request, exc: exceptions.ExpiredSignatureError):
     logger.error("Token expired!")
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired!")
