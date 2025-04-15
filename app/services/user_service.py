@@ -1,4 +1,3 @@
-from db.schemas.UserSchema import UserBase, UserSignUp, UserUpdate
 from typing import Optional
 
 from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,

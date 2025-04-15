@@ -3,12 +3,10 @@ from urllib.parse import quote
 from services.auth_service import Auth0Service
 from core.logger import logger
 from core.settings import settings
-from db.models.user import User
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
 router = APIRouter(prefix="/auth0", tags=["Auth0"])
 

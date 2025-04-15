@@ -9,13 +9,11 @@ from core.exceptions import Auth0Error, InvalidToken
 from core.logger import logger
 from core.settings import settings
 from db.models import User
-from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 from repositories.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.hash_password import verify_password
-from jose import JWTError
 
 class AuthService:
     def __init__(self, db: AsyncSession):

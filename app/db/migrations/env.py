@@ -29,7 +29,7 @@ target_metadata = BaseModel.metadata
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (without connecting to the database)."""
-    logger.info(f"Runing offline migrations.")
+    logger.info("Runing offline migrations.")
     context.configure(
         url=settings.database_url,
         target_metadata=target_metadata,
@@ -43,7 +43,7 @@ def run_migrations_offline() -> None:
 
 async def run_migrations_online() -> None:
     """Run migrations in 'online' mode (with a database connection)."""
-    logger.info(f"Runing online migrations.")
+    logger.info("Runing online migrations.")
     engine = create_async_engine(settings.database_url, pool_pre_ping=True)
 
     async with engine.connect() as connection:
