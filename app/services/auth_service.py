@@ -5,7 +5,7 @@ from typing import Optional
 from urllib.request import urlopen
 
 import requests
-from core.exceptions import InvalidToken
+from core.exceptions import Auth0Error, InvalidToken
 from core.logger import logger
 from core.settings import settings
 from db.models import User
@@ -125,7 +125,7 @@ class Auth0Service:
         
         if response.status_code != 200:
             logger.info("Getting tokens from Auth0 error: failed to fetch token.")
-            raise HTTPException(status_code=400, detail="Failed to fetch token!")
+            raise Auth0Error(detail="Failed to fetch token!")
 
         tokens = response.json()
         logger.info("Getting tokens from Auth0 success.")
@@ -140,7 +140,7 @@ class Auth0Service:
 
         if not rsa_key:
             logger.error("Auth0 invalid JWT Key when getting email.")
-            raise HTTPException(status_code=401, detail="Invalid JWT Key")
+            raise Auth0Error(detail="Invalid JWT Key!")
         
         payload = self.get_token_payload(token, rsa_key)
         # Payload inclludes parameter "user_email" that consist email of user
@@ -148,7 +148,7 @@ class Auth0Service:
 
         if email is None:
             logger.error("Auth0 invalid token when getting email.")
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise Auth0Error(detail="Invalid token!")
         
         return email
     
@@ -156,7 +156,10 @@ class Auth0Service:
     def get_jwks() -> dict:
         logger.info("Getting jwks from Auth0.")
         jwks_url = f"https://{settings.auth0_domain}/.well-known/jwks.json"
-        response = urlopen(jwks_url)
+        try:
+            response = urlopen(jwks_url)
+        except Exception:
+            raise Auth0Error()
         
         return json.loads(response.read())
     
@@ -181,17 +184,15 @@ class Auth0Service:
     @staticmethod
     def get_token_payload(token: str, rsa_key: dict) -> dict:
         logger.info("Getting token payload from Auth0.")
-        try:
-            payload = jwt.decode(token,
-                rsa_key,
-                algorithms=settings.auth0_algorithm,
-                audience=settings.auth0_audience,
-                issuer=f"https://{settings.auth0_domain}/")
-            if payload is None:
-                logger.error("Getting token payload from Auth0 error: invalid token.")
-                raise HTTPException(status_code=401, detail="Invalid token")
-            logger.info("Getting token payload from Auth0 success.")
-            return payload
-        except JWTError as e:
-            logger.error("Getting token payload from Auth0 error: failed to decode token.")
-            raise HTTPException(status_code=400, detail="Failed to decode token!")
+        payload = jwt.decode(token,
+            rsa_key,
+            algorithms=settings.auth0_algorithm,
+            audience=settings.auth0_audience,
+            issuer=f"https://{settings.auth0_domain}/")
+        
+        if payload is None:
+            logger.error("Getting token payload from Auth0 error: invalid token.")
+            raise Auth0Error(detail="Invalid Auth0 token!")
+        
+        logger.info("Getting token payload from Auth0 success.")
+        return payload
