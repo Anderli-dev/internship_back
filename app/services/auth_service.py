@@ -25,6 +25,7 @@ class AuthService:
         user: User = await self.repo.get_user_by_email(user_email)
         
         if not user or not verify_password(password, user.password):
+            logger.error("Incorrect username or password!")
             return None
         
         logger.info("User authentication success.")
@@ -46,6 +47,7 @@ class AuthService:
         try:
             return await self.verify_auth0_jwt(credentials)
         except Exception:
+            logger.info("User is not Auth0.")
             return await self.verify_jwt(credentials)
 
     async def verify_jwt(self, credentials: HTTPAuthorizationCredentials) -> User:

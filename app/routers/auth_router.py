@@ -16,7 +16,6 @@ async def login_for_access_token(user_data: UserSignIn, db: AsyncSession = Depen
     user = await service.authenticate_user(user_data.email, user_data.password)
     
     if not user:
-        logger.error("Incorrect username or password!")
         raise HTTPException(
             status_code=401,
             detail="Incorrect username or password",

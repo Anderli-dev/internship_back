@@ -1,5 +1,6 @@
 from typing import Optional
 
+from core.logger import logger
 from db.schemas.UserSchema import (UserBase, UserDetailResponse, UserSignUp,
                                    UserUpdate)
 from repositories.user_repository import UserRepository
@@ -19,18 +20,21 @@ class UserService:
         user.password = hash_password(user.password)
         new_user = await self.repo.create(user.model_dump())
         if not new_user:
+            logger.info("Failed to create. User does not exist in db")
             return None
         return UserDetailResponse.model_validate(new_user.__dict__)
     
     async def get_user(self, user_id: int) -> Optional[UserDetailResponse]:
         user = await self.repo.get_user(user_id)
         if not user:
+            logger.info("Failed to get. User does not exist in db")
             return None
         return UserDetailResponse.model_validate(user.__dict__)
 
     async def update_user(self, user_id: int, user_update: UserUpdate) -> UserDetailResponse | None:
         updated_user = await self.repo.update(user_id, user_update.model_dump(exclude_unset=True))
         if not updated_user:
+            logger.info("Failed to update. User does not exist in db")
             return None
         return UserDetailResponse.model_validate(updated_user.__dict__)
 
