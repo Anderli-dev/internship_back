@@ -1,3 +1,5 @@
+from db.models.user import User
+from utils.get_current_user import get_current_user
 from core.logger import logger
 from db.schemas.UserSchema import (UserDetailResponse, UserSignUp,
                                    UsersListResponse, UserUpdate)
@@ -65,11 +67,6 @@ async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
         
 security = HTTPBearer()
 @router.get("/me/", response_model=UserDetailResponse)
-async def get_me(credentials: HTTPAuthorizationCredentials = Security(security), db: AsyncSession = Depends(get_db)) -> UserDetailResponse:
-    logger.info("Getting information about yourself.")
-    service = AuthService(db)
-    user = await service.get_current_user(credentials)
-    
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+async def get_me(user: User = Depends(get_current_user)) -> UserDetailResponse:
+    logger.info("Getting information about user.")
     return UserDetailResponse.model_validate(user.__dict__)

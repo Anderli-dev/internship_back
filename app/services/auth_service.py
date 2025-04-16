@@ -16,7 +16,7 @@ from repositories.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.hash_password import verify_password
 
-from app.db.schemas.UserSchema import UserSignIn
+from db.schemas.UserSchema import UserSignIn
 
 
 class AuthService:
