@@ -9,11 +9,15 @@ from core.exceptions import Auth0Error, InvalidToken
 from core.logger import logger
 from core.settings import settings
 from db.models import User
+from fastapi import HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 from repositories.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.hash_password import verify_password
+
+from app.db.schemas.UserSchema import UserSignIn
+
 
 class AuthService:
     def __init__(self, db: AsyncSession):
@@ -93,6 +97,17 @@ class AuthService:
             return None
 
         return user
+    
+    async def login_for_access_token(self, user_data: UserSignIn) -> dict:
+        user = await self.authenticate_user(user_data.email, user_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        access_token = await self.create_access_token(data={"user_email": user.email})
+        return {"access_token": access_token, "token_type": "bearer"}
     
 class Auth0Service:
     def __init__(self, db: AsyncSession):
