@@ -51,10 +51,3 @@ async def callback(request: Request, db: AsyncSession = Depends(get_db)) -> dict
         
     logger.info("Auth0 token Login success!")
     return {"access_token": tokens["access_token"], "email": email}
-
-@router.get("/logout")
-async def logout():
-    logger.info("Auth0 Logout")
-    return_to = quote(f"http://{settings.auth0_app_host}:{settings.app_port}/docs", safe='')
-    logout_url = f"https://{settings.auth0_domain}/v2/logout?client_id={settings.client_id}&returnTo={return_to}"
-    return RedirectResponse(logout_url)
