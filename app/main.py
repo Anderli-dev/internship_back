@@ -1,5 +1,5 @@
 import uvicorn
-from app.core.exception_handler import register_exception_handlers
+from core.exception_handler import register_exception_handlers
 from core.settings import settings
 from fastapi import FastAPI
 from routers import auth_router, db_router, user_router
