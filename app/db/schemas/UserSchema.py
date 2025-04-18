@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 
 class UserBase(BaseModel):
-    username: Optional[str]
+    username: Optional[str] = None
     email: EmailStr
 
     @field_validator("email")

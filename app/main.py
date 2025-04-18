@@ -2,7 +2,7 @@ import uvicorn
 from core.settings import settings
 from fastapi import FastAPI
 from jose import exceptions, jwt, JWTError
-from routers import auth0_router, auth_router, db_router, user_router
+from routers import auth_router, db_router, user_router
 from utils.cors import add_cors_middleware
 
 from core.exceptions import (InvalidToken, Auth0Error, invalid_token_handler, iternal_server_error,
@@ -22,7 +22,6 @@ app.add_exception_handler(Auth0Error, auth0_error_handler)
 app.include_router(db_router.router)
 app.include_router(user_router.router)
 app.include_router(auth_router.router)
-app.include_router(auth0_router.router)
 
 @app.get("/")
 def home() -> dict:
