@@ -7,6 +7,16 @@ class Settings(BaseSettings):
     app_host: str
     app_port: int
     
+    secret_key: str
+    jwt_algorithm: str
+    auth0_algorithm: str
+    
+    auth0_app_host: str
+    auth0_domain: str
+    auth0_audience: str
+    client_id: str
+    client_secret: str
+    
     redis_host: str
     redis_port: int
     

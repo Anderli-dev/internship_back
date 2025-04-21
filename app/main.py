@@ -1,19 +1,22 @@
 import uvicorn
+from core.exception_handler import register_exception_handlers
 from core.settings import settings
 from fastapi import FastAPI
-from routers import db_router, user_router
+from routers import auth_router, db_router, user_router
 from utils.cors import add_cors_middleware
 
 app = FastAPI()
 
 add_cors_middleware(app)
 
+register_exception_handlers(app)
+
 app.include_router(db_router.router)
 app.include_router(user_router.router)
+app.include_router(auth_router.router)
 
 @app.get("/")
 def home() -> dict:
-    print(settings.cors_origins)
     return {"status_code": 200, "detail": "ok", "result": "working"}
     
 if __name__ == "__main__":

@@ -1,9 +1,8 @@
+from db.models import User
+from db.schemas.UserSchema import UserBase
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-
 from core.logger import logger
-from db.models import User
-from db.schemas.UserSchema import UserBase, UserSignUp, UserUpdate
 
 
 class UserRepository:
@@ -11,33 +10,37 @@ class UserRepository:
         self.db = db
 
     async def get_all(self, skip: int = 0, limit: int = 100) -> list[UserBase]:
+        logger.info("Getting users from db.")
         result = await self.db.execute(select(User).offset(skip).limit(limit))
         users = result.scalars().all()
         return [UserBase.model_validate(user.__dict__) for user in users]
 
     async def get_user(self, user_id: int) -> User | None:
-        result = await self.db.execute(
-            select(User).filter(User.id == user_id)
-        )
+        logger.info("Getting user from db by id.")
+        result = await self.db.execute(select(User).filter(User.id == user_id))
         return result.scalars().first()
-
-    async def create(self, user: UserSignUp) -> User:
-        db_user = User(**user.model_dump())
+    
+    async def get_user_by_email(self, user_email: str) -> User | None:
+        logger.info("Getting user from db by email.")
+        result = await self.db.execute(select(User).filter(User.email == user_email))
+        return result.scalars().first()
+    
+    async def create(self, user_data: dict) -> User:
+        logger.info("Creating user in db.")
+        db_user = User(**user_data)
         self.db.add(db_user)
         await self.db.commit()
         await self.db.refresh(db_user)
         return db_user
     
-    async def update(self, user_id: int, user_update: UserUpdate) -> User | None:
-        result = await self.db.execute(
-            select(User).filter(User.id == user_id)
-        )
+    async def update(self, user_id: int, user_data: dict) -> User | None:
+        logger.info("Updating user in db.")
+        result = await self.db.execute(select(User).filter(User.id == user_id))
         user = result.scalars().first()
         if not user:
             return None
 
-        update_data = user_update.model_dump(exclude_unset=True)
-        for key, value in update_data.items():
+        for key, value in user_data.items():
             setattr(user, key, value)
 
         await self.db.commit()
@@ -45,9 +48,8 @@ class UserRepository:
         return user
 
     async def delete(self, user_id: int) -> bool:
-        result = await self.db.execute(
-            select(User).filter(User.id == user_id)
-        )
+        logger.info("Deleting user in db.")
+        result = await self.db.execute(select(User).filter(User.id == user_id))
         user = result.scalars().first()
         if not user:
             return False

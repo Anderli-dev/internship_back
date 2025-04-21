@@ -3,7 +3,6 @@ from core.logger import logger
 from db.redis import get_redis_connection
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import SQLAlchemyError
 
 async def redis_test() -> str:
     logger.debug("Redis test.")

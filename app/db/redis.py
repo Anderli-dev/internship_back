@@ -1,7 +1,7 @@
-from fastapi import HTTPException
-from core.logger import logger
 import redis.asyncio as aioredis
+from core.logger import logger
 from core.settings import settings
+from fastapi import HTTPException
 
 
 async def get_redis_connection() -> aioredis:
